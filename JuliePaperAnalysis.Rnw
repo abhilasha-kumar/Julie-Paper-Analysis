@@ -985,27 +985,27 @@ ggplot(aes(x = PrimeType, y = Accuracy,
 
 <<>>=
 ## CODE BELOW IS IF WE WANT MCQ NUMBERS FOR SAME/DIFFERENT PRIME CHOICE
-for(i in 1:nrow(exp1_mcq)){
-  if(exp1_mcq[i,"PrimeType"] == exp1_mcq[i,"ChosenPrime"]){
-    exp1_mcq[i,"MCQChoice"] = "Same"
-  }
-  else {
-    exp1_mcq[i,"MCQChoice"] = "Different"
-  }
-  
-}
-
-e1_mcq_yn = group_by(exp1_mcq, Subject, AgeGroup, StudyNo, 
-                         PrimeType, MCQChoice ) %>%
-                  summarise_at(vars(Proportion), sum)
-
-e1_mcq_agg_yn = summarySE(e1_mcq_agg_yn, 
-                        measurevar = "Proportion",
-                        groupvars = c("AgeGroup", "PrimeType", "MCQChoice"))
+# for(i in 1:nrow(exp1_mcq)){
+#   if(exp1_mcq[i,"PrimeType"] == exp1_mcq[i,"ChosenPrime"]){
+#     exp1_mcq[i,"MCQChoice"] = "Same"
+#   }
+#   else {
+#     exp1_mcq[i,"MCQChoice"] = "Different"
+#   }
+#   
+# }
+# 
+# e1_mcq_yn = group_by(exp1_mcq, Subject, AgeGroup, StudyNo, 
+#                          PrimeType, MCQChoice ) %>%
+#                   summarise_at(vars(Proportion), sum)
+# library(Rmisc)
+# e1_mcq_agg_yn = summarySE(e1_mcq_agg, 
+#                         measurevar = "Proportion",
+#                         groupvars = c("AgeGroup", "PrimeType", "MCQChoice"))
 
 ## CODE BELOW ONLY FOR R AND B CHOICES in MCQ 
 
-e1_mcq_agg = summarySE(e1_mcq_agg, 
+e1_mcq_agg = summarySE(exp1_mcq, 
                         measurevar = "Proportion",
                         groupvars = c("AgeGroup", "PrimeType", "ChosenPrime"))
                       
@@ -1020,23 +1020,23 @@ library(ggthemes)
 e1_mcq_main %>% mutate(PrimeCondition = factor(PrimeType, 
                                                  levels = unique(PrimeType),
                     labels = c("Phon+Sem","Semantic")),
-                    ChoseThePrime = factor(ChoseThePrime, 
+                    Choice = factor(ChoseThePrime, 
                                                  levels = unique(ChoseThePrime),
-                    labels = c("Yes","No")))%>%
+                    labels = c("Prime Chosen","PrimeNotChosen")))%>%
 ggplot(aes(x = PrimeCondition, y = Proportion, 
-                              fill = ChoseThePrime, group = ChoseThePrime))+
+                              fill = Choice, group = Choice))+
  geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
   geom_errorbar(aes(ymin=Proportion - ci, ymax=Proportion + ci), 
              width=.2, color = "gray26", 
              position = position_dodge(0.7))+
   facet_wrap(~AgeGroup)+
  theme_few()+
-  scale_fill_manual(values = c("gray", "black"))+
+  scale_fill_manual(values = c("white", "black"))+
     xlab("Prime Given") + ylab("Mean Proportion of Errors") + 
   ggtitle("Experiment 1: Multiple-Choice Errors")  +
    theme(axis.text = element_text(face = "bold", size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_blank(),
           plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 
@@ -1129,23 +1129,23 @@ library(ggthemes)
 e2_mcq_main %>% mutate(PrimeCondition = factor(PrimeType, 
                                                  levels = unique(PrimeType),
                     labels = c("Phon+Sem","Semantic")),
-                    ChoseThePrime = factor(ChoseThePrime, 
+                     Choice = factor(ChoseThePrime, 
                                                  levels = unique(ChoseThePrime),
-                    labels = c("Yes","No")))%>%
+                    labels = c("Prime Chosen","PrimeNotChosen")))%>%
 ggplot(aes(x = PrimeCondition, y = Proportion, 
-                              fill = ChoseThePrime, group = ChoseThePrime))+
+                              fill = Choice, group = Choice))+
  geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
   geom_errorbar(aes(ymin=Proportion - ci, ymax=Proportion + ci), 
              width=.2, color = "gray26", 
              position = position_dodge(0.7))+
   facet_wrap(~AgeGroup)+
  theme_few()+
-  scale_fill_manual(values = c("gray", "black", "white"))+
+  scale_fill_manual(values = c("white", "black"))+
     xlab("Prime Given") + ylab("Mean Proportion of Errors") + 
   ggtitle("Experiment 2: Multiple-Choice Errors")  +
    theme(axis.text = element_text(face = "bold", size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_blank(),
           plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 
@@ -1240,22 +1240,22 @@ library(ggthemes)
 e3_mcq_main %>% mutate(PrimeCondition = factor(PrimeType, 
                                                  levels = unique(PrimeType),
                     labels = c("Phon+Sem","Semantic")),
-                    ChoseThePrime = factor(ChoseThePrime, 
+                    Choice = factor(ChoseThePrime, 
                                                  levels = unique(ChoseThePrime),
-                    labels = c("Yes","No")))%>%
+                    labels = c("Prime Chosen","Prime Not Chosen")))%>%
 ggplot(aes(x = PrimeCondition, y = Proportion, 
-                              fill = ChoseThePrime, group = ChoseThePrime))+
+                              fill = Choice, group = Choice))+
  geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
   geom_errorbar(aes(ymin=Proportion - ci, ymax=Proportion + ci), 
              width=.2, color = "gray26", 
              position = position_dodge(0.7))+
  theme_few()+
-  scale_fill_manual(values = c("gray", "black", "white"))+
+  scale_fill_manual(values = c("white", "black"))+
     xlab("Prime Given") + ylab("Mean Proportion of Errors") + 
   ggtitle("Experiment 3: Multiple-Choice Errors")  +
    theme(axis.text = element_text(face = "bold", size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_blank(),
           plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 
@@ -1314,7 +1314,7 @@ ggplot(aes(x = PrimeCondition, y = Proportion,
   ggtitle("Experiment 2 vs 3: Multiple-Choice Errors")  +
    theme(axis.text = element_text(face = "bold", size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_blank(),
           plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 @
