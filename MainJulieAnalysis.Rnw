@@ -1,0 +1,1899 @@
+\documentclass[a4paper]{article}
+\usepackage{Sweave}
+\usepackage{fixltx2e}
+
+\usepackage[margin=1.0in]{geometry}
+
+ \DefineVerbatimEnvironment{Sinput}{Verbatim} { frame = lines, fontshape = sl}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{frame=lines, fontshape = sl}
+
+\title{Julie Priming Study (YA-OA With-Without Instruction)}
+\author{Abhilasha Kumar}
+<<echo=FALSE>>=
+options(width=60)
+library(xtable)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(tidyr)
+@
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+ \maketitle
+
+\section{Target Retrieval Accuracy: Phonological Facilitation}
+
+<<echo=FALSE>>=
+j <- read.csv("MainJulieagg_5studies.csv", header = TRUE, sep = ",")
+#removing 2 subjects to maintain counterbalancing
+j <- subset(j, j$value.Subject!= 198 & j$value.Subject!= 95)
+j_agg <-j[, c(2,3,4, 5, 18,19,20,21)]
+#wide to long conversion
+library(tidyr)
+j_agg_long <- j_agg %>%
+  gather(PrimeCondition, Accuracy, value.racc, value.pacc, value.bacc, value.uacc)
+
+#ordered by subject
+final_j <- j_agg_long[order(j_agg_long$value.Subject),]
+
+#changing chars to factors
+colnames(final_j) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction",
+                      "PrimeCondition", "Accuracy")
+final_j$Subject <- as.factor(final_j$Subject)
+final_j$PrimeCondition <- as.factor(final_j$PrimeCondition)
+final_j$AgeGroup = as.factor(final_j$AgeGroup)
+
+final_j$PrimeCondition = sub("value.bacc", "Both", final_j$PrimeCondition)
+final_j$PrimeCondition = sub("value.racc", "Related", final_j$PrimeCondition)
+final_j$PrimeCondition = sub("value.pacc", "Phonological", final_j$PrimeCondition)
+final_j$PrimeCondition = sub("value.uacc", "Unrelated", final_j$PrimeCondition)
+
+@
+
+\section {Within Experiment Analyses}
+<<echo=FALSE>>=
+young_noinstruction = subset(final_j, final_j$AgeGroup == "Young" & 
+                               final_j$PrimeInstruction == "NoInstruction" & 
+                               final_j$StudyNo == "2" )
+old_noinstruction = subset(final_j, final_j$AgeGroup == "Old" & 
+                               final_j$PrimeInstruction == "NoInstruction" )
+young_nottheprime = subset(final_j, final_j$AgeGroup == "Young" & 
+                               final_j$PrimeInstruction == "NotThePrime" )
+old_nottheprime = subset(final_j, final_j$AgeGroup == "Old" & 
+                               final_j$PrimeInstruction == "NotThePrime" )
+young_48ms = subset(final_j, final_j$AgeGroup == "Young" & 
+                               final_j$PrimeInstruction == "NoInstruction" & 
+                               final_j$StudyNo == "1" )
+
+y_noinstruction_aov <- aov(data = young_noinstruction, 
+                           Accuracy ~ PrimeCondition + Error(Subject/PrimeCondition))
+#summary(y_noinstruction_aov)
+
+o_noinstruction_aov <- aov(data = old_noinstruction, 
+                           Accuracy ~ PrimeCondition + Error(Subject/PrimeCondition))
+#summary(o_noinstruction_aov)
+
+y_nottheprime_aov <- aov(data = young_nottheprime, 
+                         Accuracy ~ PrimeCondition + Error(Subject/PrimeCondition))
+#summary(y_nottheprime_aov)
+
+o_nottheprime_aov <- aov(data = old_nottheprime, 
+                         Accuracy ~ PrimeCondition + Error(Subject/PrimeCondition))
+#summary(o_nottheprime_aov)
+
+young_48ms_aov <- aov(data = young_48ms, 
+                           Accuracy ~ PrimeCondition + Error(Subject/PrimeCondition))
+summary(young_48ms_aov)
+@
+
+\subsection {Young: No Instruction}
+<<fig=TRUE, echo=FALSE>>=
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+young_noinstruction_lsm = lsmeans::lsmeans(y_noinstruction_aov, "PrimeCondition")
+prime_effect = cld(young_noinstruction_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+
+
+plot_young_noinstruction = summary(young_noinstruction_lsm)
+plot_young_noinstruction <- as.data.frame(plot_young_noinstruction)
+ggplot(plot_young_noinstruction, aes(x = PrimeCondition, y = lsmean)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "pink")+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), 
+             width=.1, color = "gray26", 
+             position = position_dodge(0.6))+
+    theme_few()+
+    xlab("PrimeCondition") + ylab("Mean Accuracy") + 
+    ggtitle("YA (No Instruction): \n Accuracy as a function of Prime") 
+summary(y_noinstruction_aov)
+kable(subset(prime_effect$comparisons, 1<2))
+
+@
+
+\subsection {Young: Not The Prime}
+
+<<fig=TRUE, echo=FALSE>>=
+young_nottheprime_lsm = lsmeans::lsmeans(y_nottheprime_aov, "PrimeCondition")
+prime_effect = cld(young_nottheprime_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+
+
+plot_young_nottheprime = summary(young_nottheprime_lsm)
+plot_young_nottheprime <- as.data.frame(plot_young_nottheprime)
+ggplot(plot_young_nottheprime, aes(x = PrimeCondition, y = lsmean)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "forestgreen")+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), 
+             width=.1, color = "gray26", 
+             position = position_dodge(0.6))+
+    theme_few()+
+    xlab("PrimeCondition") + ylab("Mean Accuracy") + 
+    ggtitle("YA (Not The Prime): \n Accuracy as a function of Prime") 
+
+summary(y_nottheprime_aov)
+
+kable(subset(prime_effect$comparisons, 1<2))
+
+@
+\subsection {Old: No Instruction}
+
+<<fig=TRUE, echo=FALSE>>=
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+old_noinstruction_lsm = lsmeans::lsmeans(o_noinstruction_aov, "PrimeCondition")
+prime_effect = cld(old_noinstruction_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+
+plot_old_noinstruction = summary(old_noinstruction_lsm)
+plot_old_noinstruction <- as.data.frame(plot_old_noinstruction)
+ggplot(plot_old_noinstruction, aes(x = PrimeCondition, y = lsmean)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgoldenrod1")+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), 
+             width=.1, color = "gray26", 
+             position = position_dodge(0.6))+
+    theme_few()+
+    xlab("PrimeCondition") + ylab("Mean Accuracy") + 
+    ggtitle("OA (No Instruction): \n Accuracy as a function of Prime") 
+summary(o_noinstruction_aov)
+
+kable(subset(prime_effect$comparisons, 1<2))
+
+@
+
+\subsection{Old: Not The Prime}
+
+<<fig=TRUE, echo=FALSE>>=
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+old_nottheprime_lsm = lsmeans::lsmeans(o_nottheprime_aov, "PrimeCondition")
+prime_effect = cld(old_nottheprime_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+
+plot_old_nottheprime = summary(old_nottheprime_lsm)
+plot_old_nottheprime <- as.data.frame(plot_old_nottheprime)
+ggplot(plot_old_nottheprime, aes(x = PrimeCondition, y = lsmean)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "coral2")+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), 
+             width=.1, color = "gray26", 
+             position = position_dodge(0.6))+
+  ylim(0, 0.4)+
+    theme_few()+
+    xlab("PrimeCondition") + ylab("Mean Accuracy") + 
+    ggtitle("OA (Not The Prime): \n Accuracy as a function of Prime") 
+
+summary(o_nottheprime_aov)
+kable(subset(prime_effect$comparisons, 1<2))
+
+@
+
+\subsection{Young: 48ms}
+
+<<fig=TRUE, echo=FALSE>>=
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+young_48ms_lsm = lsmeans::lsmeans(young_48ms_aov, "PrimeCondition")
+prime_effect = cld(young_48ms_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+
+plot_young48ms = summary(young_48ms_lsm)
+plot_young48ms <- as.data.frame(plot_young48ms)
+ggplot(plot_young48ms, aes(x = PrimeCondition, y = lsmean)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "yellow")+
+  geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), 
+             width=.1, color = "gray26", 
+             position = position_dodge(0.6))+
+  ylim(0, 0.4)+
+    theme_few()+
+    xlab("PrimeCondition") + ylab("Mean Accuracy") + 
+    ggtitle("YA (48 ms): \n Accuracy as a function of Prime") 
+
+library(knitr)
+kable(subset(prime_effect$comparisons, 1<2))
+
+@
+
+\section {Between Experiment ANOVAs}
+
+<<echo=FALSE>>=
+main4_acc = subset(final_j, final_j$StudyNo != '1')
+#looking effect of instruction only, separately in young and old
+
+young = subset(main4_acc, main4_acc$AgeGroup == "Young")
+old = subset(main4_acc, main4_acc$AgeGroup == "Old")
+
+@
+
+\subsection {Young: Effect of Instruction}
+<<echo=FALSE>>=
+young_prime_aov <- aov(data = young, Accuracy ~ PrimeInstruction*PrimeCondition + 
+                   Error(Subject/PrimeCondition))
+summary(young_prime_aov)
+@
+
+\subsection {Old: Effect of Instruction}
+<<echo=FALSE>>=
+old_prime_aov <- aov(data = old, Accuracy ~ PrimeInstruction*PrimeCondition + 
+                   Error(Subject/PrimeCondition))
+summary(old_prime_aov)
+@
+
+\subsection {No Instruction: Effect of Age}
+<<echo=FALSE>>=
+#looking at age effect
+
+noinstruction = subset(main4_acc, main4_acc$PrimeInstruction == "NoInstruction")
+nottheprime = subset(main4_acc, main4_acc$PrimeInstruction == "NotThePrime")
+
+noinstruction_aov <- aov(data = noinstruction, Accuracy ~ AgeGroup*PrimeCondition + 
+                   Error(Subject/PrimeCondition))
+summary(noinstruction_aov)
+
+##PLANNED COMPARISONS
+library(lsmeans)
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp1_lsm = lsmeans::lsmeans(noinstruction_aov, c("AgeGroup", "PrimeCondition"))
+prime_effect = cld(exp1_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = "AgeGroup")
+
+kable(subset(prime_effect$comparisons, 1<2))
+
+## PLOTTING
+library(Rmisc)
+
+noinstruction_agg = summarySE(noinstruction, 
+                        measurevar = "Accuracy",
+                        groupvars = c("AgeGroup", "PrimeCondition"))
+
+library(ggplot2)
+library(ggthemes)
+ggplot(noinstruction_agg, aes(x = PrimeCondition, y = Accuracy, 
+                              fill = AgeGroup, group = AgeGroup))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+  geom_errorbar(aes(ymin=Accuracy - ci, ymax=Accuracy + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.5))+
+ theme_few()+
+  scale_fill_calc()+
+    xlab("Prime Condition") + ylab("Mean Accuracy") + 
+  ggtitle("Experiment 1: Target Retrieval Accuracy")
+
+
+@
+
+\subsection {Not The Prime: Effect of Age}
+<<echo=FALSE>>=
+nottheprime_aov <- aov(data = nottheprime, Accuracy ~ AgeGroup*PrimeCondition + 
+                   Error(Subject/PrimeCondition))
+summary(nottheprime_aov)
+
+@
+
+
+\section {3-way interactions}
+
+<<>>=
+threeway_accuracy = aov(data = main4_acc, Accuracy ~ AgeGroup*PrimeInstruction*PrimeCondition + 
+                                    Error(Subject/PrimeCondition))
+summary(threeway_accuracy)
+@
+
+<<>>=
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+agebyinstruction_lsm = lsmeans::lsmeans(agebyinstruction_aov, c("AgeGroup", "PrimeInstruction"))
+prime_effect = cld(agebyinstruction_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = "AgeGroup")
+
+kable(subset(prime_effect$comparisons, 1<2))
+
+
+@
+
+
+\section {Multiple Choice Analysis}
+
+<<echo=FALSE>>=
+j_mcq <-j[, c(2,3,4, 5, 70:89)] 
+j_mcq_big = j[,c(3,22:25)]
+
+#wide to long conversion
+library(tidyr)
+j_mcq_long <- j_mcq %>%
+  gather(PrimeCondition, Proportion, 
+         value.prop_r_r, value.prop_r_p, value.prop_r_b, value.prop_r_u,
+         value.prop_p_r, value.prop_p_p, value.prop_p_b, value.prop_p_u,
+         value.prop_b_r, value.prop_b_p, value.prop_b_b, value.prop_b_u,
+         value.prop_u_r, value.prop_u_p, value.prop_u_b, value.prop_u_u)
+
+ j_overall_mcq = gather(data = j_mcq_big, PrimeCondition, MCQAcc, 
+                  value.rmcq, value.pmcq, value.bmcq, value.umcq)
+
+#ordered by subject
+final_mcq <- j_mcq_long[order(j_mcq_long$value.Subject),]
+final_mcq <- final_mcq[, -c(5:8)]
+
+#Separating PrimeCondition and ChosenPrime
+final_mcq$PrimeCondition = sub("*...........", "", final_mcq$PrimeCondition)
+final_mcq = separate(data = final_mcq, PrimeCondition, c("PrimeType", "ChosenPrime"), sep = "_" )
+
+j_overall_mcq$PrimeCondition <- sub("*......", "", j_overall_mcq$PrimeCondition)
+j_overall_mcq$PrimeCondition <- sub("mcq", "", j_overall_mcq$PrimeCondition)
+j_overall_mcq <- j_overall_mcq[order(j_overall_mcq$value.Subject),]
+
+#renaming columns
+colnames(j_overall_mcq) = c("Subject", "PrimeType", "MCQAcc")
+colnames(final_mcq) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction", 
+                        "PrimeType", "ChosenPrime", "Proportion")
+
+#dataset is in order!
+##Note: final_mcq_overall contains all MCQ errors + overall MCQ accuracy for each subject
+## in each prime condition
+
+final_mcq = merge(final_mcq, j_overall_mcq, by = c("Subject", "PrimeType"))
+final_mcq <- final_mcq[order(final_mcq$Subject),]
+
+
+@
+
+\section {ANOVAs}
+
+<<echo=FALSE>>=
+
+final_mcq$AgeGroup <- as.factor(as.character(final_mcq$AgeGroup))
+final_mcq$Subject <- as.factor(as.character(final_mcq$Subject))
+final_mcq$StudyNo <- as.factor(as.character(final_mcq$StudyNo))
+final_mcq$PrimeInstruction <- as.factor(as.character(final_mcq$PrimeInstruction))
+final_mcq$PrimeType <- as.factor(as.character(final_mcq$PrimeType))
+final_mcq$ChosenPrime <- as.factor(as.character(final_mcq$ChosenPrime))
+
+
+young_noinstruction_mcq = subset(final_mcq, final_mcq$AgeGroup == "Young" & 
+                               final_mcq$PrimeInstruction == "NoInstruction" & 
+                                 final_mcq$StudyNo == "2")
+old_noinstruction_mcq = subset(final_mcq, final_mcq$AgeGroup == "Old" & 
+                               final_mcq$PrimeInstruction == "NoInstruction" )
+young_nottheprime_mcq = subset(final_mcq, final_mcq$AgeGroup == "Young" & 
+                               final_mcq$PrimeInstruction == "NotThePrime" )
+old_nottheprime_mcq = subset(final_mcq, final_mcq$AgeGroup == "Old" & 
+                               final_mcq$PrimeInstruction == "NotThePrime" )
+
+
+young_48ms_mcq = subset(final_mcq, final_mcq$AgeGroup == "Young" & 
+                               final_mcq$PrimeInstruction == "NoInstruction" & 
+                                 final_mcq$StudyNo == "1")
+@
+
+
+\section {3-way MCQ interactions}
+<<>>=
+library(dplyr)
+dataforthreeway = group_by(final_mcq, Subject, StudyNo, AgeGroup, PrimeInstruction, PrimeType) %>%
+    summarise_each(funs(mean(., na.rm = TRUE)), MCQAcc)
+main4 = subset(dataforthreeway,dataforthreeway$StudyNo != '1' )
+threeway_mcq = aov(data = main4, MCQAcc ~ AgeGroup*PrimeInstruction*PrimeType +
+                                      Error(Subject/PrimeType))
+summary(threeway_mcq)
+@
+
+\section {2-way MCQ interactions}
+
+<<>>=
+young_mcq = subset(main4, main4$AgeGroup == "Young")
+old_mcq = subset(main4, main4$AgeGroup == "Old")
+
+noinstruction_mcq = subset(main4, main4$PrimeInstruction == "NoInstruction")
+nottheprime_mcq = subset(main4, main4$PrimeInstruction == "NotThePrime")
+
+young_mcq_aov = aov(data = young_mcq, MCQAcc ~ PrimeInstruction*PrimeType)
+summary(young_mcq_aov)
+
+old_mcq_aov = aov(data = old_mcq, MCQAcc ~ PrimeInstruction*PrimeType)
+summary(old_mcq_aov)
+
+noinstruction_mcq_aov = aov(data = noinstruction_mcq, MCQAcc ~ AgeGroup*PrimeType +
+                            Error(Subject/PrimeType))
+summary(noinstruction_mcq_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+agebyprime_lsm = lsmeans::lsmeans(noinstruction_mcq_aov, c("AgeGroup", "PrimeType"))
+prime_effect = cld(agebyprime_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = "AgeGroup")
+
+kable(subset(prime_effect$comparisons, 1<2))
+
+
+nottheprime_mcq_aov = aov(data = nottheprime_mcq, MCQAcc ~ AgeGroup*PrimeType)
+summary(nottheprime_mcq_aov)
+
+@
+
+\subsection {Young: No Instruction}
+<<echo=FALSE>>=
+
+
+y_noinstruction_mcq_aov <- aov(data = young_noinstruction_mcq, 
+                           Proportion ~ PrimeType*ChosenPrime + 
+                             Error(Subject/(PrimeType*ChosenPrime)))
+summary(y_noinstruction_mcq_aov)
+@
+\subsection {Old: No Instruction}
+<<echo=FALSE>>=
+o_noinstruction_mcq_aov <- aov(data = old_noinstruction_mcq, 
+                           Proportion ~ PrimeType*ChosenPrime + 
+                             Error(Subject/(PrimeType*ChosenPrime)))
+summary(o_noinstruction_mcq_aov)
+@
+
+\subsection {Young: Not The Prime}
+<<echo=FALSE>>=
+y_nottheprime_mcq_aov <- aov(data = young_nottheprime_mcq, 
+                           Proportion ~ PrimeType*ChosenPrime + 
+                             Error(Subject/(PrimeType*ChosenPrime)))
+summary(y_nottheprime_mcq_aov)
+@
+
+\subsection {Old: Not The Prime}
+<<echo=FALSE>>=
+o_nottheprime_mcq_aov <- aov(data = old_nottheprime_mcq, 
+                           Proportion ~ PrimeType*ChosenPrime + 
+                             Error(Subject/(PrimeType*ChosenPrime)))
+summary(o_nottheprime_mcq_aov)
+@
+
+\subsection {Young: 48ms}
+<<echo=FALSE>>=
+y_48ms_mcq_aov <- aov(data = young_48ms_mcq, 
+                           Proportion ~ PrimeType*ChosenPrime + 
+                             Error(Subject/(PrimeType*ChosenPrime)))
+summary(y_48ms_mcq_aov)
+@
+
+<<fig = TRUE, echo=FALSE>>=
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+y_no_r_r = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "r" & young_noinstruction_mcq$ChosenPrime == "r")[,7], na.rm = TRUE)
+y_no_r_p = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "r" & young_noinstruction_mcq$ChosenPrime == "p")[,7], na.rm = TRUE)
+y_no_r_b = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "r" & young_noinstruction_mcq$ChosenPrime == "b")[,7], na.rm = TRUE)
+y_no_r_u = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "r" & young_noinstruction_mcq$ChosenPrime == "u")[,7], na.rm = TRUE)
+y_no_p_r = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "p" & young_noinstruction_mcq$ChosenPrime == "r")[,7], na.rm = TRUE)
+y_no_p_p = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "p" & young_noinstruction_mcq$ChosenPrime == "p")[,7], na.rm = TRUE)
+y_no_p_b = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "p" & young_noinstruction_mcq$ChosenPrime == "b")[,7], na.rm = TRUE)
+y_no_p_u = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "p" & young_noinstruction_mcq$ChosenPrime == "u")[,7], na.rm = TRUE)
+y_no_b_r = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "b" & young_noinstruction_mcq$ChosenPrime == "r")[,7], na.rm = TRUE)
+y_no_b_p = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "b" & young_noinstruction_mcq$ChosenPrime == "p")[,7], na.rm = TRUE)
+y_no_b_b = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "b" & young_noinstruction_mcq$ChosenPrime == "b")[,7], na.rm = TRUE)
+y_no_b_u = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "b" & young_noinstruction_mcq$ChosenPrime == "u")[,7], na.rm = TRUE)
+y_no_u_r = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "u" & young_noinstruction_mcq$ChosenPrime == "r")[,7], na.rm = TRUE)
+y_no_u_p = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "u" & young_noinstruction_mcq$ChosenPrime == "p")[,7], na.rm = TRUE)
+y_no_u_b = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "u" & young_noinstruction_mcq$ChosenPrime == "b")[,7], na.rm = TRUE)
+y_no_u_u = mean(subset(young_noinstruction_mcq, young_noinstruction_mcq$PrimeType == "u" & young_noinstruction_mcq$ChosenPrime == "u")[,7], na.rm = TRUE)
+
+y_no_r_overall = mean(subset(young_noinstruction_mcq, 
+                             young_noinstruction_mcq$PrimeType == "r")[,8])
+y_no_p_overall = mean(subset(young_noinstruction_mcq, 
+                             young_noinstruction_mcq$PrimeType == "p")[,8])
+y_no_b_overall = mean(subset(young_noinstruction_mcq, 
+                             young_noinstruction_mcq$PrimeType == "b")[,8])
+y_no_u_overall = mean(subset(young_noinstruction_mcq, 
+                             young_noinstruction_mcq$PrimeType == "u")[,8])
+
+
+plot_young_noinstruction_mcq <- matrix(NA, nrow = 20, ncol = 3)
+plot_young_noinstruction_mcq <- as.data.frame(plot_young_noinstruction_mcq)
+colnames(plot_young_noinstruction_mcq) = c("PrimeType", "ChosenPrime", "Proportion")
+plot_young_noinstruction_mcq$PrimeType = c("Related", "Related", "Related", "Related",
+                                           "Related",
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                            "Phonological",
+                                            "Both","Both","Both","Both",
+                                           "Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated",
+                                           "Unrelated")
+plot_young_noinstruction_mcq$ChosenPrime = c("Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy")
+plot_young_noinstruction_mcq$Proportion = c(y_no_r_r, y_no_r_p,y_no_r_b,y_no_r_u,
+                                            y_no_r_overall,
+                                            y_no_p_r,y_no_p_p,y_no_p_b,y_no_p_u,
+                                            y_no_p_overall,
+                                            y_no_b_r,y_no_b_p,y_no_b_b,y_no_b_u,
+                                            y_no_b_overall,
+                                            y_no_u_r,y_no_u_p,y_no_u_b,y_no_u_u,
+                                            y_no_b_overall)
+
+
+ ggplot(plot_young_noinstruction_mcq, aes(x = PrimeType, y = Proportion, fill = ChosenPrime)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+   scale_fill_colorblind()+
+  ylim(0,0.8)+
+    xlab("PrimeCondition") + ylab("Proportion of Trials") + 
+    ggtitle("YA (No Instruction)") 
+
+
+@
+
+
+<<fig = TRUE, echo=FALSE>>=
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+y_no_r_r = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "r" & young_nottheprime_mcq$ChosenPrime == "r")[,7], na.rm = TRUE)
+y_no_r_p = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "r" & young_nottheprime_mcq$ChosenPrime == "p")[,7], na.rm = TRUE)
+y_no_r_b = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "r" & young_nottheprime_mcq$ChosenPrime == "b")[,7], na.rm = TRUE)
+y_no_r_u = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "r" & young_nottheprime_mcq$ChosenPrime == "u")[,7], na.rm = TRUE)
+y_no_p_r = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "p" & young_nottheprime_mcq$ChosenPrime == "r")[,7], na.rm = TRUE)
+y_no_p_p = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "p" & young_nottheprime_mcq$ChosenPrime == "p")[,7], na.rm = TRUE)
+y_no_p_b = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "p" & young_nottheprime_mcq$ChosenPrime == "b")[,7], na.rm = TRUE)
+y_no_p_u = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "p" & young_nottheprime_mcq$ChosenPrime == "u")[,7], na.rm = TRUE)
+y_no_b_r = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "b" & young_nottheprime_mcq$ChosenPrime == "r")[,7], na.rm = TRUE)
+y_no_b_p = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "b" & young_nottheprime_mcq$ChosenPrime == "p")[,7], na.rm = TRUE)
+y_no_b_b = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "b" & young_nottheprime_mcq$ChosenPrime == "b")[,7], na.rm = TRUE)
+y_no_b_u = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "b" & young_nottheprime_mcq$ChosenPrime == "u")[,7], na.rm = TRUE)
+y_no_u_r = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "u" & young_nottheprime_mcq$ChosenPrime == "r")[,7], na.rm = TRUE)
+y_no_u_p = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "u" & young_nottheprime_mcq$ChosenPrime == "p")[,7], na.rm = TRUE)
+y_no_u_b = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "u" & young_nottheprime_mcq$ChosenPrime == "b")[,7], na.rm = TRUE)
+y_no_u_u = mean(subset(young_nottheprime_mcq, young_nottheprime_mcq$PrimeType == "u" & young_nottheprime_mcq$ChosenPrime == "u")[,7], na.rm = TRUE)
+
+y_no_r_overall = mean(subset(young_nottheprime_mcq, 
+                             young_nottheprime_mcq$PrimeType == "r")[,8])
+y_no_p_overall = mean(subset(young_nottheprime_mcq, 
+                             young_nottheprime_mcq$PrimeType == "p")[,8])
+y_no_b_overall = mean(subset(young_nottheprime_mcq, 
+                             young_nottheprime_mcq$PrimeType == "b")[,8])
+y_no_u_overall = mean(subset(young_nottheprime_mcq, 
+                             young_nottheprime_mcq$PrimeType == "u")[,8])
+
+
+plot_young_nottheprime_mcq <- matrix(NA, nrow = 20, ncol = 3)
+plot_young_nottheprime_mcq <- as.data.frame(plot_young_nottheprime_mcq)
+colnames(plot_young_nottheprime_mcq) = c("PrimeType", "ChosenPrime", "Proportion")
+plot_young_nottheprime_mcq$PrimeType = c("Related", "Related", "Related", "Related", 
+                                         "Related",
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                         "Phonological",
+                                            "Both","Both","Both","Both",
+                                         "Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated",
+                                         "Unrelated")
+plot_young_nottheprime_mcq$ChosenPrime = c("Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy")
+plot_young_nottheprime_mcq$Proportion = c(y_no_r_r, y_no_r_p,y_no_r_b,y_no_r_u,
+                                            y_no_r_overall,
+                                            y_no_p_r,y_no_p_p,y_no_p_b,y_no_p_u,
+                                            y_no_p_overall,
+                                            y_no_b_r,y_no_b_p,y_no_b_b,y_no_b_u,
+                                            y_no_b_overall,
+                                            y_no_u_r,y_no_u_p,y_no_u_b,y_no_u_u,
+                                            y_no_u_overall)
+
+ggplot(plot_young_nottheprime_mcq, aes(x = PrimeType, y = Proportion, fill = ChosenPrime)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+  scale_fill_colorblind()+
+    xlab("PrimeCondition") + ylab("Proportion of Trials") + 
+    ggtitle("YA (Not The Prime)") 
+
+@
+
+
+<<fig = TRUE, echo=FALSE>>=
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+o_no_r_r = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "r" & old_noinstruction_mcq$ChosenPrime == "r")[,7])
+o_no_r_p = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "r" & old_noinstruction_mcq$ChosenPrime == "p")[,7])
+o_no_r_b = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "r" & old_noinstruction_mcq$ChosenPrime == "b")[,7])
+o_no_r_u = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "r" & old_noinstruction_mcq$ChosenPrime == "u")[,7])
+o_no_p_r = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "p" & old_noinstruction_mcq$ChosenPrime == "r")[,7])
+o_no_p_p = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "p" & old_noinstruction_mcq$ChosenPrime == "p")[,7])
+o_no_p_b = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "p" & old_noinstruction_mcq$ChosenPrime == "b")[,7])
+o_no_p_u = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "p" & old_noinstruction_mcq$ChosenPrime == "u")[,7])
+o_no_b_r = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "b" & old_noinstruction_mcq$ChosenPrime == "r")[,7])
+o_no_b_p = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "b" & old_noinstruction_mcq$ChosenPrime == "p")[,7])
+o_no_b_b = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "b" & old_noinstruction_mcq$ChosenPrime == "b")[,7])
+o_no_b_u = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "b" & old_noinstruction_mcq$ChosenPrime == "u")[,7])
+o_no_u_r = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "u" & old_noinstruction_mcq$ChosenPrime == "r")[,7])
+o_no_u_p = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "u" & old_noinstruction_mcq$ChosenPrime == "p")[,7])
+o_no_u_b = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "u" & old_noinstruction_mcq$ChosenPrime == "b")[,7])
+o_no_u_u = mean(subset(old_noinstruction_mcq, old_noinstruction_mcq$PrimeType == "u" & old_noinstruction_mcq$ChosenPrime == "u")[,7])
+
+o_no_r_overall = mean(subset(old_noinstruction_mcq, 
+                             old_noinstruction_mcq$PrimeType == "r")[,8])
+o_no_p_overall = mean(subset(old_noinstruction_mcq, 
+                             old_noinstruction_mcq$PrimeType == "p")[,8])
+o_no_b_overall = mean(subset(old_noinstruction_mcq, 
+                             old_noinstruction_mcq$PrimeType == "b")[,8])
+o_no_u_overall = mean(subset(old_noinstruction_mcq, 
+                             old_noinstruction_mcq$PrimeType == "u")[,8])
+
+plot_old_noinstruction_mcq <- matrix(NA, nrow = 20, ncol = 3)
+plot_old_noinstruction_mcq <- as.data.frame(plot_old_noinstruction_mcq)
+colnames(plot_old_noinstruction_mcq) = c("PrimeType", "ChosenPrime", "Proportion")
+plot_old_noinstruction_mcq$PrimeType = c("Related", "Related", "Related", "Related", 
+                                         "Related",
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                         "Phonological",
+                                            "Both","Both","Both","Both",
+                                         "Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated",
+                                         "Unrelated")
+plot_old_noinstruction_mcq$ChosenPrime = c("Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy")
+plot_old_noinstruction_mcq$Proportion = c(o_no_r_r, o_no_r_p,o_no_r_b,o_no_r_u,
+                                          o_no_r_overall,
+                                            o_no_p_r,o_no_p_p,o_no_p_b,o_no_p_u,
+                                          o_no_p_overall,
+                                            o_no_b_r,o_no_b_p,o_no_b_b,o_no_b_u,
+                                          o_no_b_overall,
+                                            o_no_u_r,o_no_u_p,o_no_u_b,o_no_u_u,
+                                          o_no_u_overall)
+
+ggplot(plot_old_noinstruction_mcq, aes(x = PrimeType, y = Proportion, fill = ChosenPrime)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+  ylim(0, 0.8)+
+  scale_fill_colorblind()+
+    xlab("PrimeCondition") + ylab("Proportion of trials") + 
+    ggtitle("OA (No Instruction)") 
+
+@
+
+<<fig = TRUE, echo=FALSE>>=
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+o_no_r_r = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "r" & old_nottheprime_mcq$ChosenPrime == "r")[,7])
+o_no_r_p = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "r" & old_nottheprime_mcq$ChosenPrime == "p")[,7])
+o_no_r_b = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "r" & old_nottheprime_mcq$ChosenPrime == "b")[,7])
+o_no_r_u = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "r" & old_nottheprime_mcq$ChosenPrime == "u")[,7])
+o_no_p_r = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "p" & old_nottheprime_mcq$ChosenPrime == "r")[,7])
+o_no_p_p = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "p" & old_nottheprime_mcq$ChosenPrime == "p")[,7])
+o_no_p_b = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "p" & old_nottheprime_mcq$ChosenPrime == "b")[,7])
+o_no_p_u = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "p" & old_nottheprime_mcq$ChosenPrime == "u")[,7])
+o_no_b_r = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "b" & old_nottheprime_mcq$ChosenPrime == "r")[,7])
+o_no_b_p = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "b" & old_nottheprime_mcq$ChosenPrime == "p")[,7])
+o_no_b_b = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "b" & old_nottheprime_mcq$ChosenPrime == "b")[,7])
+o_no_b_u = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "b" & old_nottheprime_mcq$ChosenPrime == "u")[,7])
+o_no_u_r = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "u" & old_nottheprime_mcq$ChosenPrime == "r")[,7])
+o_no_u_p = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "u" & old_nottheprime_mcq$ChosenPrime == "p")[,7])
+o_no_u_b = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "u" & old_nottheprime_mcq$ChosenPrime == "b")[,7])
+o_no_u_u = mean(subset(old_nottheprime_mcq, old_nottheprime_mcq$PrimeType == "u" & old_nottheprime_mcq$ChosenPrime == "u")[,7])
+
+o_no_r_overall = mean(subset(old_nottheprime_mcq, 
+                             old_nottheprime_mcq$PrimeType == "r")[,8])
+o_no_p_overall = mean(subset(old_nottheprime_mcq, 
+                             old_nottheprime_mcq$PrimeType == "p")[,8])
+o_no_b_overall = mean(subset(old_nottheprime_mcq, 
+                             old_nottheprime_mcq$PrimeType == "b")[,8])
+o_no_u_overall = mean(subset(old_nottheprime_mcq, 
+                             old_nottheprime_mcq$PrimeType == "u")[,8])
+
+
+plot_old_nottheprime_mcq <- matrix(NA, nrow = 20, ncol = 3)
+plot_old_nottheprime_mcq <- as.data.frame(plot_old_nottheprime_mcq)
+colnames(plot_old_nottheprime_mcq) = c("PrimeType", "ChosenPrime", "Proportion")
+plot_old_nottheprime_mcq$PrimeType = c("Related", "Related", "Related", "Related", 
+                                         "Related",
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                         "Phonological",
+                                            "Both","Both","Both","Both",
+                                         "Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated",
+                                         "Unrelated")
+plot_old_nottheprime_mcq$ChosenPrime = c("Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy")
+plot_old_nottheprime_mcq$Proportion = c(o_no_r_r, o_no_r_p,o_no_r_b,o_no_r_u,
+                                          o_no_r_overall,
+                                            o_no_p_r,o_no_p_p,o_no_p_b,o_no_p_u,
+                                          o_no_p_overall,
+                                            o_no_b_r,o_no_b_p,o_no_b_b,o_no_b_u,
+                                          o_no_b_overall,
+                                            o_no_u_r,o_no_u_p,o_no_u_b,o_no_u_u,
+                                          o_no_u_overall)
+
+ggplot(plot_old_nottheprime_mcq, aes(x = PrimeType, y = Proportion, fill = ChosenPrime)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+  ylim(0, 0.8)+
+  scale_fill_colorblind()+
+    xlab("PrimeCondition") + ylab("Proportion of trials") + 
+    ggtitle("OA (Not The Prime)") 
+
+@
+\section {MCQ errors for 48 ms young}
+<<fig = TRUE, echo=FALSE>>=
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+y_no_r_r = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "r" & young_48ms_mcq$ChosenPrime == "r")[,7])
+y_no_r_p = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "r" & young_48ms_mcq$ChosenPrime == "p")[,7])
+y_no_r_b = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "r" & young_48ms_mcq$ChosenPrime == "b")[,7])
+y_no_r_u = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "r" & young_48ms_mcq$ChosenPrime == "u")[,7])
+y_no_p_r = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "p" & young_48ms_mcq$ChosenPrime == "r")[,7])
+y_no_p_p = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "p" & young_48ms_mcq$ChosenPrime == "p")[,7])
+y_no_p_b = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "p" & young_48ms_mcq$ChosenPrime == "b")[,7])
+y_no_p_u = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "p" & young_48ms_mcq$ChosenPrime == "u")[,7])
+y_no_b_r = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "b" & young_48ms_mcq$ChosenPrime == "r")[,7])
+y_no_b_p = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "b" & young_48ms_mcq$ChosenPrime == "p")[,7])
+y_no_b_b = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "b" & young_48ms_mcq$ChosenPrime == "b")[,7])
+y_no_b_u = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "b" & young_48ms_mcq$ChosenPrime == "u")[,7])
+y_no_u_r = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "u" & young_48ms_mcq$ChosenPrime == "r")[,7])
+y_no_u_p = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "u" & young_48ms_mcq$ChosenPrime == "p")[,7])
+y_no_u_b = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "u" & young_48ms_mcq$ChosenPrime == "b")[,7])
+y_no_u_u = mean(subset(young_48ms_mcq, young_48ms_mcq$PrimeType == "u" & young_48ms_mcq$ChosenPrime == "u")[,7])
+
+y_no_r_overall = mean(subset(young_48ms_mcq, 
+                             young_48ms_mcq$PrimeType == "r")[,8])
+y_no_p_overall = mean(subset(young_48ms_mcq, 
+                             young_48ms_mcq$PrimeType == "p")[,8])
+y_no_b_overall = mean(subset(young_48ms_mcq, 
+                             young_48ms_mcq$PrimeType == "b")[,8])
+y_no_u_overall = mean(subset(young_48ms_mcq, 
+                             young_48ms_mcq$PrimeType == "u")[,8])
+
+
+plot_young_48ms_mcq <- matrix(NA, nrow = 20, ncol = 3)
+plot_young_48ms_mcq <- as.data.frame(plot_young_48ms_mcq)
+colnames(plot_young_48ms_mcq) = c("PrimeType", "ChosenPrime", "Proportion")
+plot_young_48ms_mcq$PrimeType = c("Related", "Related", "Related", "Related",
+                                           "Related",
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                            "Phonological",
+                                            "Both","Both","Both","Both",
+                                           "Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated",
+                                           "Unrelated")
+plot_young_48ms_mcq$ChosenPrime = c("Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy",
+                                             "Related", "Phonological", "Both", "Unrelated",
+                                             "Accuracy")
+plot_young_48ms_mcq$Proportion = c(y_no_r_r, y_no_r_p,y_no_r_b,y_no_r_u,
+                                            y_no_r_overall,
+                                            y_no_p_r,y_no_p_p,y_no_p_b,y_no_p_u,
+                                            y_no_p_overall,
+                                            y_no_b_r,y_no_b_p,y_no_b_b,y_no_b_u,
+                                            y_no_b_overall,
+                                            y_no_u_r,y_no_u_p,y_no_u_b,y_no_u_u,
+                                            y_no_b_overall)
+
+
+ ggplot(plot_young_48ms_mcq, aes(x = PrimeType, y = Proportion, fill = ChosenPrime)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+   scale_fill_colorblind()+
+  ylim(0,0.8)+
+    xlab("PrimeCondition") + ylab("Proportion of Trials") + 
+    ggtitle("YA (48 ms)") 
+
+
+@
+
+
+
+
+<<echo=FALSE>>=
+ final_mcq_main4 = subset(final_mcq, final_mcq$StudyNo != '1')
+young_mcq = subset(final_mcq_main4, final_mcq_main4$AgeGroup == "Young")
+old_mcq = subset(final_mcq_main4, final_mcq_main4$AgeGroup == "Old")
+noinstruction_mcq = subset(final_mcq_main4, final_mcq_main4$PrimeInstruction == "NoInstruction")
+nottheprime_mcq = subset(final_mcq_main4, final_mcq_main4$PrimeInstruction == "NotThePrime")
+
+@
+
+\subsection {Young: Instruction*PrimeType*PrimeChosen}
+<<echo=FALSE>>=
+y_instruction_mcq_aov = aov(data = young_mcq, Proportion ~ PrimeInstruction*PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(y_instruction_mcq_aov)
+@
+
+\subsection {Old: Instruction*PrimeType*PrimeChosen}
+<<echo=FALSE>>=
+o_instruction_mcq_aov = aov(data = old_mcq, Proportion ~ PrimeInstruction*PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(o_instruction_mcq_aov)
+@
+
+\subsection {Age*Instruction*PrimeType*PrimeChosen}
+
+<<echo=FALSE>>=
+fourway_aov = aov(data = final_mcq_main4, Proportion ~ AgeGroup*PrimeInstruction*PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(fourway_aov)
+@
+
+\subsection {Exp: 1 Age*PrimeType*PrimeChosen}
+
+<<>>=
+## before we do ANOVA, we need to replace NAs with 0.
+
+for (i in 1: nrow(noinstruction_mcq)){
+   if(is.na(noinstruction_mcq[i,7])){
+     noinstruction_mcq[i,7] = 0
+   }
+  
+}
+
+exp1_aov_mcq = aov(data = noinstruction_mcq, Proportion ~ AgeGroup*PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(exp1_aov_mcq)
+library(ez)
+ezANOVA(data = noinstruction_mcq, wid = .(Subject),
+        dv = .(Proportion), within =.(PrimeType, ChosenPrime),
+        between = .(AgeGroup))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp1_errors_lsm = lsmeans::lsmeans(exp1_aov_mcq, c("AgeGroup", "PrimeType", "ChosenPrime"))
+prime_effect = cld(exp1_errors_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup", "PrimeType"))
+
+kable(subset(prime_effect$comparisons, 1<2))
+
+@
+
+\section {Comparing Young 48 ms and Old Not the Prime}
+
+<<>>=
+young48_oldnotprime = subset(final_mcq, final_mcq$StudyNo == "1" | final_mcq$StudyNo == "6")
+
+young48_oldnotprime_aov = aov(data = young48_oldnotprime, 
+                              Proportion ~ AgeGroup*PrimeType*ChosenPrime + 
+                                Error(Subject/(PrimeType*ChosenPrime)))
+summary(young48_oldnotprime_aov)
+@
+
+\section {Comparing Young 48 ms and Old Not the Prime}
+
+<<>>=
+young48_youngnotprime = subset(final_mcq, final_mcq$StudyNo == "1" | final_mcq$StudyNo == "2")
+
+young48_youngnotprime_aov = aov(data = young48_youngnotprime, 
+                              Proportion ~ StudyNo*PrimeType*ChosenPrime + 
+                                Error(Subject/(PrimeType*ChosenPrime)))
+summary(young48_youngnotprime_aov)
+@
+
+%\section {Mixed Effect Modeling}
+<<echo=FALSE>>=
+#trialdata = read.csv("Julie_FORMLM.csv", header = TRUE, sep = ",")
+#library(lme4)
+#library(lmerTest)
+#trialdata$Subject <- as.factor(trialdata$Subject)
+#trialdata = subset(trialdata, trialdata$Subject!= 95 & trialdata$Subject!= 198)
+
+
+#instruction <- subset(trialdata, trialdata$PrimeInstruction == "NotThePrime")
+#contrasts(instruction$PrimeCondition) = contr.treatment(4, base = 2)
+
+#m <- glmer(data = instruction, Accuracy ~ AgeGroup*PrimeCondition + 
+#             (PrimeCondition|Subject) + (1|Trial), family = binomial, 
+ #          glmerControl("bobyqa", optCtrl = list(maxfun = 100000)))
+#summary(m)
+@
+
+<<echo=FALSE>>=
+#library(effects)
+#ee <- Effect(c("AgeGroup", "PrimeCondition"),m) 
+#ggplot(as.data.frame(ee),aes( x = PrimeCondition, y = fit, fill = AgeGroup))+
+# geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+#  geom_errorbar(aes(ymin=lower, ymax=upper), 
+#             width=.1, color = "gray26", 
+#             position = position_dodge(0.6))+
+  # geom_ribbon(colour=NA,alpha=0.1,aes(ymin=lower,ymax=upper))+
+#         theme_few()+
+#  xlab("Prime") + ylab("Predicted Values of Accuracy") + 
+#  ggtitle("Effect of Prime on Accuracy")
+
+@
+
+\section {State Analysis}
+
+<<>>=
+
+statedata <- read.csv("MainJulieagg_5studies.csv", header = TRUE, sep = ",")
+
+statedata <- subset(statedata, statedata$value.Subject!= 198 & statedata$value.Subject!= 95)
+statedata_agg <-statedata[, c(2,3,4, 5, 90, 91, 92, 93)] 
+
+#wide to long conversion
+library(tidyr)
+statedata_agg_long <- statedata_agg %>%
+  gather(State, Trials, value.know, value.dontknow, value.other, value.TOT)
+
+#ordered by subject
+final_statedata <- statedata_agg_long[order(statedata_agg_long$value.Subject),]
+
+final_statedata$State = sub("*......", "", final_statedata$State)
+
+#dataset is in order!
+colnames(final_statedata) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction", 
+                        "State", "Trials")
+
+## also need this split across prime type
+
+library(tidyr)
+library(dplyr)
+statedata_agg_primetype = statedata[, c(2,3,4, 5, 26:41)] 
+statedata_primetype_long <- statedata_agg_primetype %>%
+  gather(StatePrime, Trials, 
+         value.r_know, value.r_dontknow, value.r_other, value.r_TOT,
+         value.p_know, value.p_dontknow, value.p_other, value.p_TOT,
+         value.b_know, value.b_dontknow, value.b_other, value.b_TOT,
+         value.u_know, value.u_dontknow, value.u_other, value.u_TOT) %>%
+  separate(StatePrime, c('Prime', 'State'), sep = "_") %>%
+  arrange(value.Subject)
+
+statedata_primetype_long$Prime = sub("*......", "", statedata_primetype_long$Prime)
+colnames(statedata_primetype_long) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction",
+                                       "PrimeCondition", "State", "Trials")
+
+@
+
+<<>>=
+#simple aggregate table
+
+library(dplyr)
+
+agg_state_primetype = group_by(statedata_primetype_long, StudyNo, 
+                               AgeGroup, PrimeCondition, State)%>%
+    summarise_at(vars(Trials), mean)
+
+exp1_state_agg = subset(agg_state_primetype, agg_state_primetype$StudyNo == "2" | 
+                      agg_state_primetype$StudyNo == "4")
+library(knitr)
+kable(spread(exp1_state, State, Trials))
+
+exp1_state_long = subset(statedata_primetype_long, statedata_primetype_long$StudyNo == "2" | 
+                           statedata_primetype_long$StudyNo == "4")
+exp1_state_long$AgeGroup <- as.factor(exp1_state_long$AgeGroup)
+exp1_state_long$Subject <- as.factor(exp1_state_long$Subject)
+exp1_state_long$StudyNo <- as.factor(exp1_state_long$StudyNo)
+exp1_state_long$PrimeInstruction <- as.factor(exp1_state_long$PrimeInstruction)
+exp1_state_long$PrimeCondition <- as.factor(exp1_state_long$PrimeCondition)
+exp1_state_long$State <- as.factor(exp1_state_long$State)
+
+exp1_state_aov = aov(data = exp1_state_long, Trials ~ AgeGroup*PrimeCondition*State + 
+                                  Error(Subject/(PrimeCondition*State)))
+summary(exp1_state_aov)
+library(ez)
+ezANOVA(data = exp1_state_long, wid = .(Subject),
+        dv = .(Trials), within =.(PrimeCondition, State),
+        between = .(AgeGroup))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+exp1_state_lsm = lsmeans::lsmeans(exp1_state_aov, c("AgeGroup", "PrimeCondition", "State"))
+prime_effect = cld(exp1_state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup", "PrimeCondition"))
+
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+@
+
+<<>>=
+final_statedata$AgeGroup <- as.factor(final_statedata$AgeGroup)
+final_statedata$Subject <- as.factor(final_statedata$Subject)
+final_statedata$StudyNo <- as.factor(final_statedata$StudyNo)
+final_statedata$PrimeInstruction <- as.factor(final_statedata$PrimeInstruction)
+final_statedata$State <- as.factor(final_statedata$State)
+
+
+young_noinstruction_state = subset(final_statedata, final_statedata$AgeGroup == "Young" & 
+                               final_statedata$PrimeInstruction == "NoInstruction" &
+                                 final_statedata$StudyNo == "2")
+old_noinstruction_state = subset(final_statedata, final_statedata$AgeGroup == "Old" & 
+                               final_statedata$PrimeInstruction == "NoInstruction" )
+young_nottheprime_state = subset(final_statedata, final_statedata$AgeGroup == "Young" & 
+                               final_statedata$PrimeInstruction == "NotThePrime" )
+old_nottheprime_state = subset(final_statedata, final_statedata$AgeGroup == "Old" & 
+                               final_statedata$PrimeInstruction == "NotThePrime" )
+young_48_state = subset(final_statedata, final_statedata$AgeGroup == "Young" & 
+                               final_statedata$PrimeInstruction == "NoInstruction" &
+                                 final_statedata$StudyNo == "1")
+@
+
+<<echo=FALSE>>=
+young_state = subset(final_statedata, final_statedata$AgeGroup == "Young")
+old_state = subset(final_statedata, final_statedata$AgeGroup == "Old")
+@
+
+\subsection {Young: Instruction*State}
+<<echo=FALSE>>=
+y_instruction_state_aov = aov(data = young_state, Trials ~ PrimeInstruction*State + 
+                                  Error(Subject/(State)))
+summary(y_instruction_state_aov)
+@
+
+\subsection {Old: Instruction*State}
+<<echo=FALSE>>=
+o_instruction_state_aov = aov(data = old_state, Trials ~ PrimeInstruction*State + 
+                                  Error(Subject/(State)))
+summary(o_instruction_state_aov)
+@
+
+\subsection {Age*Instruction*State}
+
+<<echo=FALSE>>=
+threewayway_state_aov = aov(data = final_statedata, Trials ~ AgeGroup*PrimeInstruction*State + 
+                                  Error(Subject/(State)))
+summary(threewayway_state_aov)
+@
+
+\subsection {Age*State}
+
+<<echo=FALSE>>=
+twoway_state_aov = aov(data = final_statedata, Trials ~ AgeGroup*State + 
+                                  Error(Subject/(State)))
+summary(twoway_state_aov)
+@
+
+
+\subsection{Pairwise Comparisons: Young-Old and Effect of Instruction}
+
+<<echo=FALSE>>=
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+state_lsm = lsmeans::lsmeans(threewayway_state_aov, c("AgeGroup", "PrimeInstruction", "State"))
+instruction_effect = cld(state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup", "State"))
+state_effect = cld(state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeInstruction", "State"))
+
+kable(subset(state_effect$comparisons, state_effect$comparisons$p.value < 0.09))
+#kable(subset(instruction_effect$comparisons, instruction_effect$comparisons$p.value < 0.09))
+
+@
+
+\subsection{Pairwise Comparisons: Young-Old and Effect of Instruction}
+
+<<echo=FALSE>>=
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+twoway_state_lsm = lsmeans::lsmeans(twoway_state_aov, c("AgeGroup", "State"))
+interaction_effect = cld(twoway_state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = "State")
+
+#kable(subset(state_effect$comparisons, state_effect$comparisons$p.value < 0.09))
+kable(subset(interaction_effect$comparisons, interaction_effect$comparisons$p.value < 0.09))
+
+@
+
+<<>>=
+plot_twoway = summary(twoway_state_lsm)
+y_plot_twoway = subset(plot_twoway, plot_twoway$AgeGroup == "Young")
+o_plot_twoway = subset(plot_twoway, plot_twoway$AgeGroup == "Old")
+
+ggplot(plot_twoway, aes(x = State, y = lsmean, fill = AgeGroup)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("State by Age Group") 
+@
+
+
+\subsection {Plot}
+
+<<fig=TRUE, echo=FALSE>>=
+noinstruction_state = subset(final_statedata, final_statedata$PrimeInstruction == "NoInstruction")
+nottheprime_state = subset(final_statedata, final_statedata$PrimeInstruction == "NotThePrime")
+
+y_noinstruction_state = subset(noinstruction_state, noinstruction_state$StudyNo == "2")
+y_noinstruction_know = mean(subset(y_noinstruction_state, 
+                                   y_noinstruction_state$AgeGroup == "Young" &
+                                y_noinstruction_state$State == "know")[,6])
+y_noinstruction_dontknow = mean(subset(y_noinstruction_state, 
+                                       y_noinstruction_state$AgeGroup == "Young"
+                                       & y_noinstruction_state$State == "dontknow")[,6])
+y_noinstruction_other = mean(subset(y_noinstruction_state, 
+                                    y_noinstruction_state$AgeGroup == "Young" &
+                                y_noinstruction_state$State == "other")[,6])
+y_noinstruction_TOT = mean(subset(y_noinstruction_state, 
+                                  y_noinstruction_state$AgeGroup == "Young" &
+                                y_noinstruction_state$State == "TOT")[,6])
+
+o_noinstruction_know = mean(subset(noinstruction_state, noinstruction_state$AgeGroup == "Old" &
+                                noinstruction_state$State == "know")[,6])
+o_noinstruction_dontknow = mean(subset(noinstruction_state, noinstruction_state$AgeGroup == "Old"
+                                       & noinstruction_state$State == "dontknow")[,6])
+o_noinstruction_other = mean(subset(noinstruction_state, noinstruction_state$AgeGroup == "Old" &
+                                noinstruction_state$State == "other")[,6])
+o_noinstruction_TOT = mean(subset(noinstruction_state, noinstruction_state$AgeGroup == "Old" &
+                                noinstruction_state$State == "TOT")[,6])
+
+plot_noinstruction_state = matrix(NA, nrow = 8, ncol = 3)
+plot_noinstruction_state <- as.data.frame(plot_noinstruction_state)
+colnames(plot_noinstruction_state) = c("AgeGroup", "State", "Trials")
+
+plot_noinstruction_state$AgeGroup = c("Young", "Young", "Young", "Young",
+                                      "Old", "Old", "Old", "Old")
+plot_noinstruction_state$State = c("Know", "DontKnow", "Other", "TOT",
+                                   "Know", "DontKnow", "Other", "TOT")
+plot_noinstruction_state$Trials = c(y_noinstruction_know, y_noinstruction_dontknow, 
+                                    y_noinstruction_other, y_noinstruction_TOT,
+                                    o_noinstruction_know, o_noinstruction_dontknow, 
+                                    o_noinstruction_other, o_noinstruction_TOT)
+
+ggplot(plot_noinstruction_state, aes(x = State, y = Trials, fill = AgeGroup)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+  scale_fill_solarized()+
+  ylim(0,50)+
+     theme_few()+
+    xlab("State") + ylab("Raw Number of Trials") + 
+    ggtitle("No Instruction") 
+@
+
+<<fig=TRUE, echo=FALSE>>=
+y_nottheprime_state = subset(nottheprime_state, nottheprime_state$StudyNo == "5")
+
+y_nottheprime_know = mean(subset(y_nottheprime_state, y_nottheprime_state$AgeGroup == "Young" &
+                                y_nottheprime_state$State == "know")[,6])
+y_nottheprime_dontknow = mean(subset(y_nottheprime_state, y_nottheprime_state$AgeGroup == "Young"
+                                       & y_nottheprime_state$State == "dontknow")[,6])
+y_nottheprime_other = mean(subset(y_nottheprime_state, y_nottheprime_state$AgeGroup == "Young" &
+                                y_nottheprime_state$State == "other")[,6])
+y_nottheprime_TOT = mean(subset(y_nottheprime_state, y_nottheprime_state$AgeGroup == "Young" &
+                                y_nottheprime_state$State == "TOT")[,6])
+
+o_nottheprime_know = mean(subset(nottheprime_state, nottheprime_state$AgeGroup == "Old" &
+                                nottheprime_state$State == "know")[,6])
+o_nottheprime_dontknow = mean(subset(nottheprime_state, nottheprime_state$AgeGroup == "Old"
+                                       & nottheprime_state$State == "dontknow")[,6])
+o_nottheprime_other = mean(subset(nottheprime_state, nottheprime_state$AgeGroup == "Old" &
+                                nottheprime_state$State == "other")[,6])
+o_nottheprime_TOT = mean(subset(nottheprime_state, nottheprime_state$AgeGroup == "Old" &
+                                nottheprime_state$State == "TOT")[,6])
+
+plot_nottheprime_state = matrix(NA, nrow = 8, ncol = 3)
+plot_nottheprime_state <- as.data.frame(plot_nottheprime_state)
+colnames(plot_nottheprime_state) = c("AgeGroup", "State", "Trials")
+
+plot_nottheprime_state$AgeGroup = c("Young", "Young", "Young", "Young",
+                                      "Old", "Old", "Old", "Old")
+plot_nottheprime_state$State = c("Know", "DontKnow", "Other", "TOT",
+                                   "Know", "DontKnow", "Other", "TOT")
+plot_nottheprime_state$Trials = c(y_nottheprime_know, y_nottheprime_dontknow, 
+                                    y_nottheprime_other, y_nottheprime_TOT,
+                                    o_nottheprime_know, o_nottheprime_dontknow, 
+                                    o_nottheprime_other, o_nottheprime_TOT)
+
+ggplot(plot_nottheprime_state, aes(x = State, y = Trials, fill = AgeGroup)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+  scale_fill_solarized()+
+    ylim(0,50)+
+     theme_few()+
+    xlab("State") + ylab("Raw Number of Trials") + 
+    ggtitle("Not The Prime") 
+@
+\section {State by Prime Type}
+<<>>=
+j_statebyprime <-statedata[, c(2,3,4, 5, 26:41)] 
+
+#wide to long conversion
+library(tidyr)
+j_stateprime_long <- j_statebyprime %>%
+  gather(Condition, Trials, 
+         value.r_know, value.r_dontknow, value.r_other, value.r_TOT,
+         value.p_know, value.p_dontknow, value.p_other, value.p_TOT,
+         value.b_know, value.b_dontknow, value.b_other, value.b_TOT,
+         value.u_know, value.u_dontknow, value.u_other, value.u_TOT)
+
+#ordered by subject
+final_statebyprime <- j_stateprime_long[order(j_stateprime_long$value.Subject),]
+
+#Separating PrimeCondition and State
+final_statebyprime$Condition = sub("*......", "", final_statebyprime$Condition)
+final_statebyprime = separate(data = final_statebyprime, 
+                              Condition, c("PrimeType", "State"), sep = "_" )
+#dataset is in order!
+colnames(final_statebyprime) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction", 
+                        "PrimeType", "State", "Trials")
+@
+
+\section {ANOVAs}
+
+<<echo=FALSE>>=
+
+final_statebyprime$AgeGroup <- as.factor(final_statebyprime$AgeGroup)
+final_statebyprime$Subject <- as.factor(final_statebyprime$Subject)
+final_statebyprime$StudyNo <- as.factor(final_statebyprime$StudyNo)
+final_statebyprime$PrimeInstruction <- as.factor(final_statebyprime$PrimeInstruction)
+final_statebyprime$PrimeType <- as.factor(final_statebyprime$PrimeType)
+final_statebyprime$State <- as.factor(final_statebyprime$State)
+
+
+young_noinstruction_stateprime = subset(final_statebyprime, 
+                                        final_statebyprime$AgeGroup == "Young" & 
+                               final_statebyprime$PrimeInstruction == "NoInstruction" &
+                                 final_statebyprime$StudyNo == "2")
+old_noinstruction_stateprime = subset(final_statebyprime, final_statebyprime$AgeGroup == "Old" & 
+                               final_statebyprime$PrimeInstruction == "NoInstruction" )
+young_nottheprime_stateprime = subset(final_statebyprime, final_statebyprime$AgeGroup == "Young" & 
+                               final_statebyprime$PrimeInstruction == "NotThePrime" )
+old_nottheprime_stateprime = subset(final_statebyprime, final_statebyprime$AgeGroup == "Old" & 
+                               final_statebyprime$PrimeInstruction == "NotThePrime" )
+young_48ms_stateprime = subset(final_statebyprime, final_statebyprime$AgeGroup == "Young" & 
+                               final_statebyprime$PrimeInstruction == "NoInstruction"  &
+                                 final_statebyprime$StudyNo == "1")
+@
+
+\subsection {Young: No Instruction}
+<<echo=FALSE>>=
+y_noinstruction_stateprime_aov <- aov(data = young_noinstruction_stateprime, 
+                           Trials ~ PrimeType*State + 
+                             Error(Subject/(PrimeType*State)))
+summary(y_noinstruction_stateprime_aov)
+@
+\subsection {Old: No Instruction}
+<<echo=FALSE>>=
+o_noinstruction_stateprime_aov <- aov(data = old_noinstruction_stateprime, 
+                           Trials ~ PrimeType*State + 
+                             Error(Subject/(PrimeType*State)))
+summary(o_noinstruction_stateprime_aov)
+@
+
+\subsection {Young: Not The Prime}
+<<echo=FALSE>>=
+y_nottheprime_stateprime_aov <- aov(data = young_nottheprime_stateprime, 
+                           Trials ~ PrimeType*State + 
+                             Error(Subject/(PrimeType*State)))
+summary(y_nottheprime_stateprime_aov)
+@
+
+\subsection {Old: Not The Prime}
+<<echo=FALSE>>=
+o_nottheprime_stateprime_aov <- aov(data = old_nottheprime_stateprime, 
+                           Trials ~ PrimeType*State + 
+                             Error(Subject/(PrimeType*State)))
+summary(o_nottheprime_stateprime_aov)
+@
+
+\subsection {Young: 48ms}
+<<echo=FALSE>>=
+y_48ms_stateprime_aov <- aov(data = young_48ms_stateprime, 
+                           Trials ~ PrimeType*State + 
+                             Error(Subject/(PrimeType*State)))
+summary(y_48ms_stateprime_aov)
+@
+
+\subsection{Between Comparisons}
+
+<<echo=FALSE>>=
+young_stateprime = subset(final_statebyprime, final_statebyprime$AgeGroup == "Young")
+old_stateprime = subset(final_statebyprime, final_statebyprime$AgeGroup == "Old")
+@
+
+\subsection {Young: Instruction*PrimeType*PrimeChosen}
+<<echo=FALSE>>=
+y_instruction_stateprime_aov = aov(data = young_stateprime, Trials ~ PrimeInstruction*PrimeType*State + 
+                                  Error(Subject/(PrimeType*State)))
+summary(y_instruction_stateprime_aov)
+@
+
+\subsection {Old: Instruction*PrimeType*PrimeChosen}
+<<echo=FALSE>>=
+o_instruction_stateprime_aov = aov(data = old_stateprime, Trials ~ PrimeInstruction*PrimeType*State + 
+                                  Error(Subject/(PrimeType*State)))
+summary(o_instruction_stateprime_aov)
+@
+
+\subsection {Age*Instruction*PrimeType*PrimeChosen}
+
+<<echo=FALSE>>=
+fourway_aov_stateprime = aov(data = final_statebyprime, Trials ~ AgeGroup*PrimeInstruction*PrimeType*State + 
+                                  Error(Subject/(PrimeType*State)))
+summary(fourway_aov_stateprime)
+@
+
+\subsection {Age*PrimeType*PrimeChosen}
+
+<<echo=FALSE>>=
+threeway_aov_stateprime = aov(data = final_statebyprime, Trials ~ AgeGroup*PrimeType*State + 
+                                  Error(Subject/(PrimeType*State)))
+summary(threeway_aov_stateprime)
+@
+
+<<echo=FALSE>>=
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+stateprime_lsm = lsmeans::lsmeans(fourway_aov_stateprime, 
+                                  c("AgeGroup", "PrimeInstruction", "PrimeType", "State"))
+statebyprime_effect = cld(stateprime_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeType", "PrimeInstruction", "AgeGroup"))
+
+kable(subset(statebyprime_effect$comparisons[,c(1,2,3,4,9)], statebyprime_effect$comparisons$p.value < 0.09))
+@
+
+<<echo=FALSE>>=
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+stateprime_lsm = lsmeans::lsmeans(threeway_aov_stateprime, 
+                                  c("AgeGroup", "PrimeType", "State"))
+statebyprime_effect = cld(stateprime_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c( "AgeGroup", "PrimeType"))
+
+kable(subset(statebyprime_effect$comparisons[,c(1,2,3, 8)], statebyprime_effect$comparisons$p.value < 0.09))
+@
+
+<<>>=
+plot_threeway = summary(stateprime_lsm)
+y_plot_threeway = subset(plot_threeway, plot_threeway$AgeGroup == "Young")
+o_plot_threeway = subset(plot_threeway, plot_threeway$AgeGroup == "Old")
+
+ggplot(y_plot_threeway, aes(x = PrimeType, y = lsmean, fill = State)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+  ylim(0,12.5)+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("YA") 
+@
+
+<<>>=
+ggplot(o_plot_threeway, aes(x = PrimeType, y = lsmean, fill = State)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+  ylim(0,12.5)+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("OA")
+@
+
+
+<<fig = TRUE, echo=FALSE>>=
+
+y_no_r_k = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "r" & young_noinstruction_stateprime$State == "know")[,7])
+y_no_r_d = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "r" & young_noinstruction_stateprime$State == "dontknow")[,7])
+y_no_r_o = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "r" & young_noinstruction_stateprime$State == "other")[,7])
+y_no_r_t = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "r" & young_noinstruction_stateprime$State == "TOT")[,7])
+y_no_p_k = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "p" & young_noinstruction_stateprime$State == "know")[,7])
+y_no_p_d = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "p" & young_noinstruction_stateprime$State == "dontknow")[,7])
+y_no_p_o = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "p" & young_noinstruction_stateprime$State == "other")[,7])
+y_no_p_t = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "p" & young_noinstruction_stateprime$State == "TOT")[,7])
+y_no_b_k = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "b" & young_noinstruction_stateprime$State == "know")[,7])
+y_no_b_d = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "b" & young_noinstruction_stateprime$State == "dontknow")[,7])
+y_no_b_o = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "b" & young_noinstruction_stateprime$State == "other")[,7])
+y_no_b_t = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "b" & young_noinstruction_stateprime$State == "TOT")[,7])
+y_no_u_k = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "u" & young_noinstruction_stateprime$State == "know")[,7])
+y_no_u_d = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "u" & young_noinstruction_stateprime$State == "dontknow")[,7])
+y_no_u_o = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "u" & young_noinstruction_stateprime$State == "other")[,7])
+y_no_u_t = mean(subset(young_noinstruction_stateprime, young_noinstruction_stateprime$PrimeType == "u" & young_noinstruction_stateprime$State == "TOT")[,7])
+
+plot_young_noinstruction_stateprime <- matrix(NA, nrow = 16, ncol = 3)
+plot_young_noinstruction_stateprime <- as.data.frame(plot_young_noinstruction_stateprime)
+colnames(plot_young_noinstruction_stateprime) = c("PrimeType", "State", "Trials")
+plot_young_noinstruction_stateprime$PrimeType = c("Related", "Related", "Related", "Related", 
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                            "Both","Both","Both","Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated")
+plot_young_noinstruction_stateprime$State = c("Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT")
+plot_young_noinstruction_stateprime$Trials = c(y_no_r_k, y_no_r_d,y_no_r_o,y_no_r_t,
+                                            y_no_p_k,y_no_p_d,y_no_p_o,y_no_p_t,
+                                            y_no_b_k,y_no_b_d,y_no_b_o,y_no_b_t,
+                                            y_no_u_k,y_no_u_d,y_no_u_o,y_no_u_t)
+
+ggplot(plot_young_noinstruction_stateprime, aes(x = PrimeType, y = Trials, fill = State)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("YA (No Instruction)") 
+
+@
+
+<<fig = TRUE, echo=FALSE>>=
+
+y_no_r_k = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "r" & young_nottheprime_stateprime$State == "know")[,7])
+y_no_r_d = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "r" & young_nottheprime_stateprime$State == "dontknow")[,7])
+y_no_r_o = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "r" & young_nottheprime_stateprime$State == "other")[,7])
+y_no_r_t = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "r" & young_nottheprime_stateprime$State == "TOT")[,7])
+y_no_p_k = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "p" & young_nottheprime_stateprime$State == "know")[,7])
+y_no_p_d = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "p" & young_nottheprime_stateprime$State == "dontknow")[,7])
+y_no_p_o = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "p" & young_nottheprime_stateprime$State == "other")[,7])
+y_no_p_t = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "p" & young_nottheprime_stateprime$State == "TOT")[,7])
+y_no_b_k = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "b" & young_nottheprime_stateprime$State == "know")[,7])
+y_no_b_d = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "b" & young_nottheprime_stateprime$State == "dontknow")[,7])
+y_no_b_o = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "b" & young_nottheprime_stateprime$State == "other")[,7])
+y_no_b_t = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "b" & young_nottheprime_stateprime$State == "TOT")[,7])
+y_no_u_k = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "u" & young_nottheprime_stateprime$State == "know")[,7])
+y_no_u_d = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "u" & young_nottheprime_stateprime$State == "dontknow")[,7])
+y_no_u_o = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "u" & young_nottheprime_stateprime$State == "other")[,7])
+y_no_u_t = mean(subset(young_nottheprime_stateprime, young_nottheprime_stateprime$PrimeType == "u" & young_nottheprime_stateprime$State == "TOT")[,7])
+
+plot_young_nottheprime_stateprime <- matrix(NA, nrow = 16, ncol = 3)
+plot_young_nottheprime_stateprime <- as.data.frame(plot_young_nottheprime_stateprime)
+colnames(plot_young_nottheprime_stateprime) = c("PrimeType", "State", "Trials")
+plot_young_nottheprime_stateprime$PrimeType = c("Related", "Related", "Related", "Related", 
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                            "Both","Both","Both","Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated")
+plot_young_nottheprime_stateprime$State = c("Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT")
+plot_young_nottheprime_stateprime$Trials = c(y_no_r_k, y_no_r_d,y_no_r_o,y_no_r_t,
+                                            y_no_p_k,y_no_p_d,y_no_p_o,y_no_p_t,
+                                            y_no_b_k,y_no_b_d,y_no_b_o,y_no_b_t,
+                                            y_no_u_k,y_no_u_d,y_no_u_o,y_no_u_t)
+
+ggplot(plot_young_nottheprime_stateprime, aes(x = PrimeType, y = Trials, fill = State)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("YA (Not The Prime)") 
+
+@
+
+
+<<fig = TRUE, echo=FALSE>>=
+
+o_no_r_k = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "r" & old_noinstruction_stateprime$State == "know")[,7])
+o_no_r_d = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "r" & old_noinstruction_stateprime$State == "dontknow")[,7])
+o_no_r_o = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "r" & old_noinstruction_stateprime$State == "other")[,7])
+o_no_r_t = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "r" & old_noinstruction_stateprime$State == "TOT")[,7])
+o_no_p_k = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "p" & old_noinstruction_stateprime$State == "know")[,7])
+o_no_p_d = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "p" & old_noinstruction_stateprime$State == "dontknow")[,7])
+o_no_p_o = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "p" & old_noinstruction_stateprime$State == "other")[,7])
+o_no_p_t = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "p" & old_noinstruction_stateprime$State == "TOT")[,7])
+o_no_b_k = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "b" & old_noinstruction_stateprime$State == "know")[,7])
+o_no_b_d = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "b" & old_noinstruction_stateprime$State == "dontknow")[,7])
+o_no_b_o = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "b" & old_noinstruction_stateprime$State == "other")[,7])
+o_no_b_t = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "b" & old_noinstruction_stateprime$State == "TOT")[,7])
+o_no_u_k = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "u" & old_noinstruction_stateprime$State == "know")[,7])
+o_no_u_d = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "u" & old_noinstruction_stateprime$State == "dontknow")[,7])
+o_no_u_o = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "u" & old_noinstruction_stateprime$State == "other")[,7])
+o_no_u_t = mean(subset(old_noinstruction_stateprime, old_noinstruction_stateprime$PrimeType == "u" & old_noinstruction_stateprime$State == "TOT")[,7])
+
+plot_old_noinstruction_stateprime <- matrix(NA, nrow = 16, ncol = 3)
+plot_old_noinstruction_stateprime <- as.data.frame(plot_old_noinstruction_stateprime)
+colnames(plot_old_noinstruction_stateprime) = c("PrimeType", "State", "Trials")
+plot_old_noinstruction_stateprime$PrimeType = c("Related", "Related", "Related", "Related", 
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                            "Both","Both","Both","Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated")
+plot_old_noinstruction_stateprime$State = c("Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT")
+plot_old_noinstruction_stateprime$Trials = c(o_no_r_k, o_no_r_d,o_no_r_o,o_no_r_t,
+                                            o_no_p_k,o_no_p_d,o_no_p_o,o_no_p_t,
+                                            o_no_b_k,o_no_b_d,o_no_b_o,o_no_b_t,
+                                            o_no_u_k,o_no_u_d,o_no_u_o,o_no_u_t)
+
+ggplot(plot_old_noinstruction_stateprime, aes(x = PrimeType, y = Trials, fill = State)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("OA (No Instruction)") 
+
+@
+
+<<fig = TRUE, echo=FALSE>>=
+
+o_no_r_k = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "r" & old_nottheprime_stateprime$State == "know")[,7])
+o_no_r_d = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "r" & old_nottheprime_stateprime$State == "dontknow")[,7])
+o_no_r_o = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "r" & old_nottheprime_stateprime$State == "other")[,7])
+o_no_r_t = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "r" & old_nottheprime_stateprime$State == "TOT")[,7])
+o_no_p_k = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "p" & old_nottheprime_stateprime$State == "know")[,7])
+o_no_p_d = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "p" & old_nottheprime_stateprime$State == "dontknow")[,7])
+o_no_p_o = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "p" & old_nottheprime_stateprime$State == "other")[,7])
+o_no_p_t = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "p" & old_nottheprime_stateprime$State == "TOT")[,7])
+o_no_b_k = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "b" & old_nottheprime_stateprime$State == "know")[,7])
+o_no_b_d = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "b" & old_nottheprime_stateprime$State == "dontknow")[,7])
+o_no_b_o = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "b" & old_nottheprime_stateprime$State == "other")[,7])
+o_no_b_t = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "b" & old_nottheprime_stateprime$State == "TOT")[,7])
+o_no_u_k = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "u" & old_nottheprime_stateprime$State == "know")[,7])
+o_no_u_d = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "u" & old_nottheprime_stateprime$State == "dontknow")[,7])
+o_no_u_o = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "u" & old_nottheprime_stateprime$State == "other")[,7])
+o_no_u_t = mean(subset(old_nottheprime_stateprime, old_nottheprime_stateprime$PrimeType == "u" & old_nottheprime_stateprime$State == "TOT")[,7])
+
+plot_old_nottheprime_stateprime <- matrix(NA, nrow = 16, ncol = 3)
+plot_old_nottheprime_stateprime <- as.data.frame(plot_old_nottheprime_stateprime)
+colnames(plot_old_nottheprime_stateprime) = c("PrimeType", "State", "Trials")
+plot_old_nottheprime_stateprime$PrimeType = c("Related", "Related", "Related", "Related", 
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                            "Both","Both","Both","Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated")
+plot_old_nottheprime_stateprime$State = c("Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT")
+plot_old_nottheprime_stateprime$Trials = c(o_no_r_k, o_no_r_d,o_no_r_o,o_no_r_t,
+                                            o_no_p_k,o_no_p_d,o_no_p_o,o_no_p_t,
+                                            o_no_b_k,o_no_b_d,o_no_b_o,o_no_b_t,
+                                            o_no_u_k,o_no_u_d,o_no_u_o,o_no_u_t)
+
+ggplot(plot_old_nottheprime_stateprime, aes(x = PrimeType, y = Trials, fill = State)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("OA (Not The Prime)") 
+
+@
+
+
+<<fig = TRUE, echo=FALSE>>=
+
+y_no_r_k = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "r" & young_48ms_stateprime$State == "know")[,7])
+y_no_r_d = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "r" & young_48ms_stateprime$State == "dontknow")[,7])
+y_no_r_o = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "r" & young_48ms_stateprime$State == "other")[,7])
+y_no_r_t = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "r" & young_48ms_stateprime$State == "TOT")[,7])
+y_no_p_k = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "p" & young_48ms_stateprime$State == "know")[,7])
+y_no_p_d = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "p" & young_48ms_stateprime$State == "dontknow")[,7])
+y_no_p_o = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "p" & young_48ms_stateprime$State == "other")[,7])
+y_no_p_t = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "p" & young_48ms_stateprime$State == "TOT")[,7])
+y_no_b_k = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "b" & young_48ms_stateprime$State == "know")[,7])
+y_no_b_d = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "b" & young_48ms_stateprime$State == "dontknow")[,7])
+y_no_b_o = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "b" & young_48ms_stateprime$State == "other")[,7])
+y_no_b_t = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "b" & young_48ms_stateprime$State == "TOT")[,7])
+y_no_u_k = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "u" & young_48ms_stateprime$State == "know")[,7])
+y_no_u_d = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "u" & young_48ms_stateprime$State == "dontknow")[,7])
+y_no_u_o = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "u" & young_48ms_stateprime$State == "other")[,7])
+y_no_u_t = mean(subset(young_48ms_stateprime, young_48ms_stateprime$PrimeType == "u" & young_48ms_stateprime$State == "TOT")[,7])
+
+plot_young_48ms_stateprime <- matrix(NA, nrow = 16, ncol = 3)
+plot_young_48ms_stateprime <- as.data.frame(plot_young_48ms_stateprime)
+colnames(plot_young_48ms_stateprime) = c("PrimeType", "State", "Trials")
+plot_young_48ms_stateprime$PrimeType = c("Related", "Related", "Related", "Related", 
+                                            "Phonological", "Phonological",
+                                            "Phonological","Phonological",
+                                            "Both","Both","Both","Both",
+                                            "Unrelated", "Unrelated","Unrelated","Unrelated")
+plot_young_48ms_stateprime$State = c("Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT",
+                                              "Know", "Dont Know", "Other", "TOT")
+plot_young_48ms_stateprime$Trials = c(y_no_r_k, y_no_r_d,y_no_r_o,y_no_r_t,
+                                            y_no_p_k,y_no_p_d,y_no_p_o,y_no_p_t,
+                                            y_no_b_k,y_no_b_d,y_no_b_o,y_no_b_t,
+                                            y_no_u_k,y_no_u_d,y_no_u_o,y_no_u_t)
+
+ggplot(plot_young_48ms_stateprime, aes(x = PrimeType, y = Trials, fill = State)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("YA (No Instruction)") 
+
+@
+
+
+\section {Chi-square Tests for State variable}
+<<>>=
+
+state_wide = spread(final_statedata, State, Trials)
+state_wide_final = state_wide[order(state_wide$Subject),]
+
+counts = xtabs(data = final_statedata, Trials ~ AgeGroup + State)
+
+chisq.test(counts)
+
+#we need to see pairwise differences using Funchisq package
+
+@
+
+\section {Intrusions et al}
+
+<<>>=
+intrusion = read.csv("Julie_Main5Studies_PRIMEINTRUSION_CSV.csv", header = TRUE, sep = ",")
+
+count_intrusions_subject = group_by(intrusion, Subject, StudyNo, PrimeCondition, ResponseType)%>%
+    summarise(count = n())
+
+count_intrusions = group_by(intrusion, PrimeCondition, ResponseType)%>%
+    summarise(count = n())
+library(ggplot2)
+library(ggthemes)
+ggplot(count_intrusions, aes(x = PrimeCondition, y = count, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("Response Type Across Prime Conditions") 
+
+@
+
+<<>>=
+count_intrusions_study = group_by(intrusion, StudyNo, PrimeCondition, ResponseType)%>%
+    summarise(count = n())
+@
+
+\section {Effect of Response Type on MCQ Acc}
+
+<<>>=
+count_intrusions_study = group_by(intrusion, StudyNo, PrimeCondition, ResponseType)%>%
+    summarise(count = n())
+mcqacc_study = group_by(intrusion, StudyNo, PrimeCondition, ResponseType)%>%
+    summarise_at(vars(McAcc), mean)
+
+count_intrusions_study_2 = group_by(intrusion, StudyNo, ResponseType)%>%
+    summarise(count = n())
+mcqacc_study_2 = group_by(intrusion, StudyNo, ResponseType)%>%
+    summarise_at(vars(McAcc), mean)
+
+
+mcq_count = merge(count_intrusions_study, mcqacc_study, 
+                  by = c("StudyNo", "PrimeCondition", "ResponseType"))
+
+
+mcq_count_2 = merge(count_intrusions_study_2, mcqacc_study_2, 
+                  by = c("StudyNo", "ResponseType"))
+## there are some missing values that need to be filled 
+
+mcq_count$count = as.numeric(as.character(mcq_count$count))
+mcq_count$McAcc = as.numeric(as.character(mcq_count$McAcc))
+mcq_count$StudyNo = as.numeric(as.character(mcq_count$StudyNo))
+
+b_other = mean(subset(mcq_count, mcq_count$PrimeCondition == "B" & 
+                        mcq_count$ResponseType == "OtherPrime")[,5])
+
+p_other = mean(subset(mcq_count, mcq_count$PrimeCondition == "P" & 
+                        mcq_count$ResponseType == "OtherPrime")[,5])
+p_intrusion = mean(subset(mcq_count, mcq_count$PrimeCondition == "P" & 
+                        mcq_count$ResponseType == "PrimeIntrusion")[,5])
+r_other = mean(subset(mcq_count, mcq_count$PrimeCondition == "R" & 
+                        mcq_count$ResponseType == "OtherPrime")[,5])
+r_intrusion = mean(subset(mcq_count, mcq_count$PrimeCondition == "R" & 
+                        mcq_count$ResponseType == "PrimeIntrusion")[,5])
+u_other = mean(subset(mcq_count, mcq_count$PrimeCondition == "U" & 
+                        mcq_count$ResponseType == "OtherPrime")[,5])
+u_intrusion = mean(subset(mcq_count, mcq_count$PrimeCondition == "U" & 
+                        mcq_count$ResponseType == "PrimeIntrusion")[,5])
+
+mcq_count[92,] = c(1, "B", "OtherPrime", 0,b_other)
+mcq_count[93,] = c(1, "P", "OtherPrime", 0,p_other)
+mcq_count[94,] = c(1, "P", "PrimeIntrusion", 0,p_intrusion)
+mcq_count[95,] = c(1, "R", "OtherPrime", 0,r_other)
+mcq_count[96,] = c(1, "R", "PrimeIntrusion", 0,r_intrusion)
+mcq_count[97,] = c(1, "U", "OtherPrime", 0,u_other)
+mcq_count[98,] = c(1, "U", "PrimeIntrusion", 0,u_intrusion)
+mcq_count[99,] = c(5, "U", "PrimeIntrusion", 0,u_intrusion)
+mcq_count[100,] = c(6, "U", "PrimeIntrusion", 0,u_intrusion)
+
+mcq_count$count = as.numeric(as.character(mcq_count$count))
+mcq_count$McAcc = as.numeric(as.character(mcq_count$McAcc))
+mcq_count$StudyNo = as.numeric(as.character(mcq_count$StudyNo))
+
+@
+
+\section {ANOVAs}
+
+<<>>=
+
+mcqacc_study = group_by(intrusion, StudyNo, PrimeCondition, ResponseType)%>%
+    summarise_at(vars(McAcc), mean)
+
+mcqacc_study_collapsedprimes = group_by(intrusion, StudyNo, ResponseType)%>%
+    summarise_at(vars(McAcc), mean)
+
+study_aov = aov(data = mcqacc_study, McAcc ~ PrimeCondition*ResponseType + 
+                              Error(StudyNo/(ResponseType)))
+summary(study_aov)
+
+
+study_aov_cp = aov(data = mcqacc_study_collapsedprimes, McAcc ~ ResponseType + 
+                              Error(StudyNo/(ResponseType)))
+summary(study_aov_cp)
+@
+
+<<>>=
+
+mcq_count[92,] = c(1, "B", "OtherPrime", 0,0)
+mcq_count[93,] = c(1, "P", "OtherPrime", 0,0)
+mcq_count[94,] = c(1, "P", "PrimeIntrusion", 0,0)
+mcq_count[95,] = c(1, "R", "OtherPrime", 0,0)
+mcq_count[96,] = c(1, "R", "PrimeIntrusion", 0,0)
+mcq_count[97,] = c(1, "U", "OtherPrime", 0,0)
+mcq_count[98,] = c(1, "U", "PrimeIntrusion", 0,0)
+mcq_count[99,] = c(5, "U", "PrimeIntrusion", 0,0)
+mcq_count[100,] = c(6, "U", "PrimeIntrusion", 0,0)
+
+mcq_count$count = as.numeric(as.character(mcq_count$count))
+mcq_count$McAcc = as.numeric(as.character(mcq_count$McAcc))
+mcq_count$StudyNo = as.numeric(as.character(mcq_count$StudyNo))
+
+study_1 = subset(mcq_count, mcq_count$StudyNo == 1)
+study_2 = subset(mcq_count, mcq_count$StudyNo == 2)
+study_4 = subset(mcq_count, mcq_count$StudyNo == 4)
+study_5 = subset(mcq_count, mcq_count$StudyNo == 5)
+study_6 = subset(mcq_count, mcq_count$StudyNo == 6)
+
+ggplot(study_1, aes(x = PrimeCondition, y = McAcc, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Mutiple Choice Accuracy") + 
+    ggtitle("Young (48ms)")
+@
+
+<<>>=
+ggplot(study_1, aes(x = PrimeCondition, y = count, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+  ylim(0,530)+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("Young (48ms)")
+@
+
+<<>>=
+ggplot(study_2, aes(x = PrimeCondition, y = count, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    ylim(0,530)+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("Young (No Instruction)")
+@
+
+<<>>=
+
+ggplot(study_2, aes(x = PrimeCondition, y = McAcc, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Mutiple Choice Accuracy") + 
+    ggtitle("Young (No Instruction)")
+@
+
+<<>>=
+ggplot(study_4, aes(x = PrimeCondition, y = count, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    ylim(0,530)+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("Old (No Instruction)")
+@
+
+<<>>=
+
+ggplot(study_4, aes(x = PrimeCondition, y = McAcc, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Mutiple Choice Accuracy") + 
+    ggtitle("Old (No Instruction)")
+@
+
+<<>>=
+ggplot(study_5, aes(x = PrimeCondition, y = count, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    ylim(0,530)+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("Young (Not the Prime)")
+@
+
+<<>>=
+
+ggplot(study_5, aes(x = PrimeCondition, y = McAcc, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Mutiple Choice Accuracy") + 
+    ggtitle("Young (Not the Prime)")
+@
+
+<<>>=
+ggplot(study_6, aes(x = PrimeCondition, y = count, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+  ylim(0,530)+
+    xlab("PrimeCondition") + ylab("Raw Number of Trials") + 
+    ggtitle("Old (Not the Prime)")
+@
+
+<<>>=
+
+ggplot(study_6, aes(x = PrimeCondition, y = McAcc, fill = ResponseType)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+    xlab("PrimeCondition") + ylab("Mutiple Choice Accuracy") + 
+    ggtitle("Old (Not the Prime)")
+@
+
+<<>>=
+
+mcq_count$StudyNo = sub("1", "Young_subthreshold", mcq_count$StudyNo)
+mcq_count$StudyNo = sub("2", "Young_NoInstruction", mcq_count$StudyNo)
+mcq_count$StudyNo = sub("4", "Old_NoInstruction", mcq_count$StudyNo)
+mcq_count$StudyNo = sub("5", "Young_NotthePrime", mcq_count$StudyNo)
+mcq_count$StudyNo = sub("6", "Old_NotthePrime", mcq_count$StudyNo)
+
+
+ggplot(mcq_count, aes(x = ResponseType, y = McAcc, fill = StudyNo)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+  scale_fill_pander()+
+    xlab("Study No") + ylab("Mutiple Choice Accuracy") + 
+    ggtitle("")
+@
+
+<<>>=
+onlyincorrect = subset(mcq_count, mcq_count$ResponseType == "OtherPrime")
+ggplot(onlyincorrect, aes(x = ResponseType, y = McAcc, fill = StudyNo)) + 
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+     theme_few()+
+  scale_fill_pander()+
+    xlab("Study No") + ylab("Mutiple Choice Accuracy") + 
+    ggtitle("")
+@
+
+
+
+
+\end{document}

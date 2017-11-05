@@ -1,0 +1,1323 @@
+\documentclass[a4paper]{article}
+\usepackage{Sweave}
+\usepackage{fixltx2e}
+
+\usepackage[margin=1.0in]{geometry}
+
+ \DefineVerbatimEnvironment{Sinput}{Verbatim} { frame = lines, fontshape = sl}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{frame=lines, fontshape = sl}
+
+\title{Julie Priming Study (YA-OA With-Without Instruction)}
+\author{Abhilasha Kumar}
+<<echo=FALSE>>=
+options(width=60)
+library(xtable)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+library(tidyr)
+@
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+ \maketitle
+
+\section{Target Retrieval Accuracy: Phonological Facilitation}
+
+<<echo=FALSE>>=
+j <- read.csv("MainJulieagg_5studies.csv", header = TRUE, sep = ",")
+#removing 2 subjects to maintain counterbalancing
+j <- subset(j, j$value.Subject!= 198 & j$value.Subject!= 95)
+j_agg <-j[, c(2,3,4, 5, 18,19,20,21)]
+#wide to long conversion
+library(tidyr)
+j_agg_long <- j_agg %>%
+  gather(PrimeCondition, Accuracy, value.racc, value.pacc, value.bacc, value.uacc)
+
+#ordered by subject
+final_j <- j_agg_long[order(j_agg_long$value.Subject),]
+
+#changing chars to factors
+colnames(final_j) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction",
+                      "PrimeCondition", "Accuracy")
+final_j$Subject <- as.factor(final_j$Subject)
+final_j$PrimeCondition <- as.factor(final_j$PrimeCondition)
+final_j$AgeGroup = as.factor(final_j$AgeGroup)
+
+final_j$PrimeCondition = sub("value.bacc", "Both", final_j$PrimeCondition)
+final_j$PrimeCondition = sub("value.racc", "Related", final_j$PrimeCondition)
+final_j$PrimeCondition = sub("value.pacc", "Phonological", final_j$PrimeCondition)
+final_j$PrimeCondition = sub("value.uacc", "Unrelated", final_j$PrimeCondition)
+final_j$PrimeCondition = as.factor(as.character(final_j$PrimeCondition))
+
+### MCQ DATA
+j_mcq <-j[, c(2,3,4, 5, 70:89)] 
+j_mcq_big = j[,c(3,22:25)]
+
+#wide to long conversion
+library(tidyr)
+j_mcq_long <- j_mcq %>%
+  gather(PrimeCondition, Proportion, 
+         value.prop_r_r, value.prop_r_p, value.prop_r_b, value.prop_r_u,
+         value.prop_p_r, value.prop_p_p, value.prop_p_b, value.prop_p_u,
+         value.prop_b_r, value.prop_b_p, value.prop_b_b, value.prop_b_u,
+         value.prop_u_r, value.prop_u_p, value.prop_u_b, value.prop_u_u)
+
+ j_overall_mcq = gather(data = j_mcq_big, PrimeCondition, MCQAcc, 
+                  value.rmcq, value.pmcq, value.bmcq, value.umcq)
+
+#ordered by subject
+final_mcq <- j_mcq_long[order(j_mcq_long$value.Subject),]
+final_mcq <- final_mcq[, -c(5:8)]
+
+#Separating PrimeCondition and ChosenPrime
+final_mcq$PrimeCondition = sub("*...........", "", final_mcq$PrimeCondition)
+final_mcq = separate(data = final_mcq, PrimeCondition, c("PrimeType", "ChosenPrime"), sep = "_" )
+
+j_overall_mcq$PrimeCondition <- sub("*......", "", j_overall_mcq$PrimeCondition)
+j_overall_mcq$PrimeCondition <- sub("mcq", "", j_overall_mcq$PrimeCondition)
+j_overall_mcq <- j_overall_mcq[order(j_overall_mcq$value.Subject),]
+
+#renaming columns
+colnames(j_overall_mcq) = c("Subject", "PrimeType", "MCQAcc")
+colnames(final_mcq) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction", 
+                        "PrimeType", "ChosenPrime", "Proportion")
+
+#dataset is in order!
+##Note: final_mcq_overall contains all MCQ errors + overall MCQ accuracy for each subject
+## in each prime condition
+
+final_mcq = merge(final_mcq, j_overall_mcq, by = c("Subject", "PrimeType"))
+final_mcq <- final_mcq[order(final_mcq$Subject),]
+
+
+final_mcq$AgeGroup <- as.factor(as.character(final_mcq$AgeGroup))
+final_mcq$Subject <- as.factor(as.character(final_mcq$Subject))
+final_mcq$StudyNo <- as.factor(as.character(final_mcq$StudyNo))
+final_mcq$PrimeInstruction <- as.factor(as.character(final_mcq$PrimeInstruction))
+final_mcq$PrimeType <- as.factor(as.character(final_mcq$PrimeType))
+final_mcq$ChosenPrime <- as.factor(as.character(final_mcq$ChosenPrime))
+
+### STATE DATA
+
+
+statedata <- read.csv("MainJulieagg_5studies.csv", header = TRUE, sep = ",")
+
+statedata <- subset(statedata, statedata$value.Subject!= 198 & statedata$value.Subject!= 95)
+statedata_agg <-statedata[, c(2,3,4, 5, 90, 91, 92, 93)] 
+
+#wide to long conversion
+library(tidyr)
+statedata_agg_long <- statedata_agg %>%
+  gather(State, Trials, value.know, value.dontknow, value.other, value.TOT)
+
+#ordered by subject
+final_statedata <- statedata_agg_long[order(statedata_agg_long$value.Subject),]
+
+final_statedata$State = sub("*......", "", final_statedata$State)
+
+#dataset is in order!
+colnames(final_statedata) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction", 
+                        "State", "Trials")
+
+## also need this split across prime type
+
+library(tidyr)
+library(dplyr)
+statedata_agg_primetype = statedata[, c(2,3,4, 5, 26:41)] 
+statedata_primetype_long <- statedata_agg_primetype %>%
+  gather(StatePrime, Trials, 
+         value.r_know, value.r_dontknow, value.r_other, value.r_TOT,
+         value.p_know, value.p_dontknow, value.p_other, value.p_TOT,
+         value.b_know, value.b_dontknow, value.b_other, value.b_TOT,
+         value.u_know, value.u_dontknow, value.u_other, value.u_TOT) %>%
+  separate(StatePrime, c('Prime', 'State'), sep = "_") %>%
+  arrange(value.Subject)
+
+statedata_primetype_long$Prime = sub("*......", "", statedata_primetype_long$Prime)
+colnames(statedata_primetype_long) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction",
+                                       "PrimeCondition", "State", "Trials")
+final_statedata$AgeGroup <- as.factor(final_statedata$AgeGroup)
+final_statedata$Subject <- as.factor(final_statedata$Subject)
+final_statedata$StudyNo <- as.factor(final_statedata$StudyNo)
+final_statedata$PrimeInstruction <- as.factor(final_statedata$PrimeInstruction)
+final_statedata$State <- as.factor(final_statedata$State)
+@
+
+\section {Experiment 1: YA-OA No Instruction}
+
+<<>>=
+exp1_target = subset(final_j, final_j$StudyNo == '2' | final_j$StudyNo == '4')
+exp1_mcq = subset(final_mcq, final_mcq$StudyNo == '2' | final_mcq$StudyNo == '4')
+exp1_state = subset(final_statedata, final_statedata$StudyNo == '2' | 
+                                  final_statedata$StudyNo == '4')
+exp1_state_prime = subset(statedata_primetype_long, statedata_primetype_long$StudyNo == '2' | 
+                                  statedata_primetype_long$StudyNo == '4')
+
+exp1_state_prime$PrimeCondition = as.factor(as.character(exp1_state_prime$PrimeCondition))
+exp1_state_prime$State = as.factor(as.character(exp1_state_prime$State))
+exp1_state_prime$Subject = as.factor(as.character(exp1_state_prime$Subject))
+
+@
+
+\subsection*{Exp 1: Target Accuracy}
+<<>>=
+### TARGET RETRIEVAL ACCURACY
+
+exp1_target_aov = aov(data = exp1_target, Accuracy ~ AgeGroup*PrimeCondition + 
+                                Error (Subject/PrimeCondition))
+summary(exp1_target_aov)
+
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+exp1_target_lsm = lsmeans::lsmeans(exp1_target_aov, c("AgeGroup", "PrimeCondition"))
+prime_effect = cld(exp1_target_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup"))
+library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+
+## specific t-tests
+target_p = exp1_target %>% filter(PrimeCondition == "Phonological")
+target_r = exp1_target %>% filter(PrimeCondition == "Related")
+target_b = exp1_target %>% filter(PrimeCondition == "Both")
+target_u = exp1_target %>% filter(PrimeCondition == "Unrelated")
+
+t.test(target_p$Accuracy, target_r$Accuracy, paired = TRUE)
+t.test(target_p$Accuracy, target_b$Accuracy, paired = TRUE)
+t.test(target_p$Accuracy, target_u$Accuracy, paired = TRUE)
+
+
+@
+
+\subsection*{Exp 1: Multiple Choice}
+
+<<>>=
+
+## MULTIPLE CHOICE ACCURACY
+library(dplyr)
+exp1_mcq_acc = group_by(exp1_mcq, Subject, PrimeType, AgeGroup) %>%
+    summarise_at(vars(MCQAcc), mean)
+
+exp1_mcq_acc_aov = aov(data = exp1_mcq_acc, MCQAcc ~ AgeGroup*PrimeType + 
+                              Error(Subject/PrimeType))
+summary(exp1_mcq_acc_aov)
+
+
+ezANOVA(data = exp1_mcq_acc, wid = .(Subject),
+        dv = .(MCQAcc), within =.(PrimeType),
+        between = .(AgeGroup))
+
+
+exp1_mcqacc_lsm = lsmeans::lsmeans(exp1_mcq_acc_aov, c("AgeGroup", "PrimeType"))
+prime_effect = cld(exp1_mcqacc_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+## SPECIFIC T TESTS
+
+e1_mcq_p = exp1_mcq_acc %>% filter(PrimeType == "p")
+e1_mcq_r = exp1_mcq_acc %>% filter(PrimeType == "r")
+e1_mcq_b = exp1_mcq_acc %>% filter(PrimeType == "b")
+e1_mcq_u = exp1_mcq_acc %>% filter(PrimeType == "u")
+
+t.test(e1_mcq_p$MCQAcc, e1_mcq_r$MCQAcc, paired = TRUE)
+t.test(e1_mcq_p$MCQAcc, e1_mcq_b$MCQAcc, paired = TRUE)
+t.test(e1_mcq_p$MCQAcc, e1_mcq_u$MCQAcc)
+
+t.test(e1_mcq_r$MCQAcc, e1_mcq_u$MCQAcc, paired = TRUE)
+
+
+
+
+## MULTIPLE CHOICE ERRORS
+
+## before we do ANOVA, we need to replace NAs with 0.
+
+for (i in 1: nrow(exp1_mcq)){
+   if(is.na(exp1_mcq[i,7])){
+     exp1_mcq[i,7] = 0
+   }
+  
+}
+exp1_mcq_aov = aov(data = exp1_mcq, Proportion ~ AgeGroup*PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(exp1_mcq_aov)
+library(ez)
+ezANOVA(data = exp1_mcq, wid = .(Subject),
+        dv = .(Proportion), within =.(PrimeType, ChosenPrime),
+        between = .(AgeGroup))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp1_errors_lsm = lsmeans::lsmeans(exp1_mcq_aov, c("AgeGroup", "PrimeType", "ChosenPrime"))
+prime_effect = cld(exp1_errors_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup", "PrimeType"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+## SPECIFIC OLD COMPARISION T TEST
+
+e1mcq_old_r = exp1_mcq %>% filter(AgeGroup == "Old" & PrimeType == "r")
+e1mcq_old_r_r = e1mcq_old_r %>% filter(ChosenPrime == "r")
+e1mcq_old_r_p = e1mcq_old_r %>% filter(ChosenPrime == "p")
+e1mcq_old_r_b = e1mcq_old_r %>% filter(ChosenPrime == "b")
+e1mcq_old_r_u = e1mcq_old_r %>% filter(ChosenPrime == "u")
+
+t.test(e1mcq_old_r_r$Proportion, e1mcq_old_r_p$Proportion, paired = TRUE)
+t.test(e1mcq_old_r_r$Proportion, e1mcq_old_r_b$Proportion, paired = TRUE)
+t.test(e1mcq_old_r_r$Proportion, e1mcq_old_r_u$Proportion, paired = TRUE)
+
+e1mcq_young_r = exp1_mcq %>% filter(AgeGroup == "Young" & PrimeType == "r")
+e1mcq_young_r_r = e1mcq_young_r %>% filter(ChosenPrime == "r")
+## comparing young and old
+t.test(e1mcq_young_r_r$Proportion, e1mcq_old_r_r$Proportion)
+
+@
+
+\subsection*{Exp 1: State Data}
+
+<<>>=
+
+## just state
+exp1_state_aov = aov(data = exp1_state, Trials ~ AgeGroup*State + 
+                                        Error(Subject/State))
+summary(exp1_state_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp1_state_lsm = lsmeans::lsmeans(exp1_state_aov, c("AgeGroup", "State"))
+prime_effect = cld(exp1_state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("State"))
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+##state by prime
+exp1_stateprime_aov = aov(data = exp1_state_prime, Trials ~ AgeGroup*PrimeCondition*State + 
+                                        Error(Subject/(PrimeCondition*State)))
+summary(exp1_stateprime_aov)
+
+library(ez)
+ezANOVA(data = exp1_state_prime, wid = .(Subject),
+        dv = .(Trials), within =.(PrimeCondition, State),
+        between = .(AgeGroup))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp1_state_lsm = lsmeans::lsmeans(exp1_stateprime_aov, c("AgeGroup","PrimeCondition", "State"))
+prime_effect = cld(exp1_state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeCondition", "AgeGroup"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+### INDIVIDUAL T-TESTS FOR AGExSTATE interaction
+
+e1_young_dk = exp1_state %>% filter(AgeGroup == "Young" & State == "dontknow")
+e1_old_dk = exp1_state %>% filter(AgeGroup == "Old" & State == "dontknow")
+t.test(e1_old_dk$Trials, e1_young_dk$Trials)
+
+
+e1_young_other = exp1_state %>% filter(AgeGroup == "Young" & State == "other")
+e1_old_other = exp1_state %>% filter(AgeGroup == "Old" & State == "other")
+t.test(e1_young_other$Trials, e1_old_other$Trials)
+@
+
+
+\section {Experiment 2: YA-OA Not The Prime}
+
+<<>>=
+exp2_target = subset(final_j, final_j$StudyNo == '5' | final_j$StudyNo == '6')
+exp2_mcq = subset(final_mcq, final_mcq$StudyNo == '5' | final_mcq$StudyNo == '6')
+exp2_state = subset(final_statedata, final_statedata$StudyNo == '5' | 
+                                  final_statedata$StudyNo == '6')
+exp2_state_prime = subset(statedata_primetype_long, statedata_primetype_long$StudyNo == '5' | 
+                                  statedata_primetype_long$StudyNo == '6')
+
+
+exp2_state_prime$PrimeCondition = as.factor(as.character(exp2_state_prime$PrimeCondition))
+exp2_state_prime$State = as.factor(as.character(exp2_state_prime$State))
+exp2_state_prime$Subject = as.factor(as.character(exp2_state_prime$Subject))
+
+@
+
+\subsection*{Exp 2: Target Accuracy}
+<<>>=
+### TARGET RETRIEVAL ACCURACY
+
+exp2_target_aov = aov(data = exp2_target, Accuracy ~ AgeGroup*PrimeCondition + 
+                                Error (Subject/PrimeCondition))
+summary(exp2_target_aov)
+
+library(ez)
+ezANOVA(data = exp2_target, wid = .(Subject),
+        dv = .(Accuracy), within =.(PrimeCondition),
+        between = .(AgeGroup))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+exp2_target_lsm = lsmeans::lsmeans(exp2_target_aov, c("AgeGroup", "PrimeCondition"))
+prime_effect = cld(exp2_target_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup"))
+
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 1 ))
+## specific t-tests
+target_p = exp2_target %>% filter(PrimeCondition == "Phonological")
+target_r = exp2_target %>% filter(PrimeCondition == "Related")
+target_b = exp2_target %>% filter(PrimeCondition == "Both")
+target_u = exp2_target %>% filter(PrimeCondition == "Unrelated")
+
+t.test(target_p$Accuracy, target_r$Accuracy, paired = TRUE)
+t.test(target_p$Accuracy, target_b$Accuracy, paired = TRUE)
+t.test(target_p$Accuracy, target_u$Accuracy, paired = TRUE)
+@
+
+\subsection*{Exp 2: Multiple Choice}
+
+<<>>=
+
+## MULTIPLE CHOICE ACCURACY
+library(dplyr)
+exp2_mcq_acc = group_by(exp2_mcq, Subject, PrimeType, AgeGroup) %>%
+    summarise_at(vars(MCQAcc), mean)
+
+exp2_mcq_acc_aov = aov(data = exp2_mcq_acc, MCQAcc ~ AgeGroup*PrimeType + 
+                              Error(Subject/PrimeType))
+summary(exp2_mcq_acc_aov)
+
+## SPECIFIC T TESTS
+
+e2_mcq_p = exp2_mcq_acc %>% filter(PrimeType == "p")
+e2_mcq_r = exp2_mcq_acc %>% filter(PrimeType == "r")
+e2_mcq_b = exp2_mcq_acc %>% filter(PrimeType == "b")
+e2_mcq_u = exp2_mcq_acc %>% filter(PrimeType == "u")
+
+e2mcq_y_p = e2_mcq_p %>% filter(AgeGroup == "Young")
+e2mcq_o_p = e2_mcq_p %>% filter(AgeGroup == "Old")
+t.test(e2mcq_y_p$MCQAcc, e2mcq_o_p$MCQAcc)
+
+
+e2mcq_y_b = e2_mcq_b %>% filter(AgeGroup == "Young")
+e2mcq_o_b = e2_mcq_b %>% filter(AgeGroup == "Old")
+t.test(e2mcq_y_b$MCQAcc, e2mcq_o_b$MCQAcc)
+
+e2mcq_y_r = e2_mcq_r %>% filter(AgeGroup == "Young")
+e2mcq_o_r = e2_mcq_r %>% filter(AgeGroup == "Old")
+t.test(e2mcq_y_r$MCQAcc, e2mcq_o_r$MCQAcc)
+
+ezANOVA(data = exp2_mcq_acc, wid = .(Subject),
+        dv = .(MCQAcc), within =.(PrimeType),
+        between = .(AgeGroup))
+
+
+exp2_mcqacc_lsm = lsmeans::lsmeans(exp2_mcq_acc_aov, c("AgeGroup", "PrimeType"))
+prime_effect = cld(exp2_mcqacc_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeType"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.1))
+
+
+## MULTIPLE CHOICE ERRORS
+
+## before we do ANOVA, we need to replace NAs with 0.
+
+for (i in 1: nrow(exp2_mcq)){
+   if(is.na(exp2_mcq[i,7])){
+     exp2_mcq[i,7] = 0
+   }
+  
+}
+exp2_mcq_aov = aov(data = exp2_mcq, Proportion ~ AgeGroup*PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(exp2_mcq_aov)
+library(ez)
+ezANOVA(data = exp2_mcq, wid = .(Subject),
+        dv = .(Proportion), within =.(PrimeType, ChosenPrime),
+        between = .(AgeGroup))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp2_errors_lsm = lsmeans::lsmeans(exp2_mcq_aov, c("AgeGroup", "PrimeType", "ChosenPrime"))
+prime_effect = cld(exp2_errors_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeType", "ChosenPrime"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+## SPECIFIC OLD COMPARISION T TEST
+
+e2mcq_old_r = exp2_mcq %>% filter(AgeGroup == "Old" & PrimeType == "r")
+e2mcq_young_r = exp2_mcq %>% filter(AgeGroup == "Young" & PrimeType == "r")
+
+e2mcq_old_r_r = e2mcq_old_r %>% filter(ChosenPrime == "r")
+e2mcq_young_r_r = e2mcq_young_r %>% filter(ChosenPrime == "r")
+
+## comparing young and old
+t.test(e2mcq_young_r_r$Proportion, e2mcq_old_r_r$Proportion)
+
+e2mcq_old_r = exp2_mcq %>% filter(AgeGroup == "Old" & PrimeType == "b")
+e2mcq_young_r = exp2_mcq %>% filter(AgeGroup == "Young" & PrimeType == "b")
+
+e2mcq_old_r_r = e2mcq_old_r %>% filter(ChosenPrime == "b")
+e2mcq_young_r_r = e2mcq_young_r %>% filter(ChosenPrime == "b")
+
+## comparing young and old
+t.test(e2mcq_young_r_r$Proportion, e2mcq_old_r_r$Proportion)
+@
+
+\subsection*{Exp 2: State Data}
+
+<<>>=
+
+## just state
+exp2_state_aov = aov(data = exp2_state, Trials ~ AgeGroup*State + 
+                                        Error(Subject/State))
+summary(exp2_state_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp2_state_lsm = lsmeans::lsmeans(exp2_state_aov, c("AgeGroup", "State"))
+prime_effect = cld(exp2_state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("State"))
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+##state by prime
+exp2_stateprime_aov = aov(data = exp2_state_prime, Trials ~ AgeGroup*PrimeCondition*State + 
+                                        Error(Subject/(PrimeCondition*State)))
+summary(exp2_stateprime_aov)
+
+library(ez)
+ezANOVA(data = exp2_state_prime, wid = .(Subject),
+        dv = .(Trials), within =.(PrimeCondition, State),
+        between = .(AgeGroup))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp2_state_lsm = lsmeans::lsmeans(exp2_stateprime_aov, c("AgeGroup", "PrimeCondition", "State"))
+prime_effect = cld(exp2_state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeCondition", "State"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+### INDIVIDUAL T-TESTS FOR AGExSTATE interaction
+
+e2_young_dk = exp2_state %>% filter(AgeGroup == "Young" & State == "dontknow")
+e2_old_dk = exp2_state %>% filter(AgeGroup == "Old" & State == "dontknow")
+t.test(e2_old_dk$Trials, e2_young_dk$Trials)
+
+
+e2_young_other = exp2_state %>% filter(AgeGroup == "Young" & State == "other")
+e2_old_other = exp2_state %>% filter(AgeGroup == "Old" & State == "other")
+t.test(e2_young_other$Trials, e2_old_other$Trials)
+
+
+e2_young_TOT = exp2_state %>% filter(AgeGroup == "Young" & State == "TOT")
+e2_old_TOT = exp2_state %>% filter(AgeGroup == "Old" & State == "TOT")
+t.test(e2_young_TOT$Trials, e2_old_TOT$Trials)
+@
+
+
+\section {Experiment 3: 48ms}
+
+<<>>=
+exp3_target = subset(final_j, final_j$StudyNo == '1')
+exp3_mcq = subset(final_mcq, final_mcq$StudyNo == '1')
+exp3_state = subset(final_statedata, final_statedata$StudyNo == '1')
+exp3_state_prime = subset(statedata_primetype_long, statedata_primetype_long$StudyNo == '1')
+
+
+exp3_state_prime$PrimeCondition = as.factor(as.character(exp3_state_prime$PrimeCondition))
+exp3_state_prime$State = as.factor(as.character(exp3_state_prime$State))
+exp3_state_prime$Subject = as.factor(as.character(exp3_state_prime$Subject))
+@
+
+\subsection*{Exp 3: Target Accuracy}
+<<>>=
+### TARGET RETRIEVAL ACCURACY
+
+exp3_target_aov = aov(data = exp3_target, Accuracy ~ PrimeCondition + 
+                                Error (Subject/PrimeCondition))
+summary(exp3_target_aov)
+
+## specific t-tests
+target_p = exp3_target %>% filter(PrimeCondition == "Phonological")
+target_r = exp3_target %>% filter(PrimeCondition == "Related")
+target_b = exp3_target %>% filter(PrimeCondition == "Both")
+target_u = exp3_target %>% filter(PrimeCondition == "Unrelated")
+
+t.test(target_p$Accuracy, target_u$Accuracy, paired = TRUE)
+
+library(ez)
+ezANOVA(data = exp3_target, wid = .(Subject),
+        dv = .(Accuracy), within =.(PrimeCondition))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+exp3_target_lsm = lsmeans::lsmeans(exp3_target_aov, c("PrimeCondition"))
+prime_effect = cld(exp3_target_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 1 ))
+@
+
+\subsection*{Exp 3: Multiple Choice}
+
+<<>>=
+
+## MULTIPLE CHOICE ACCURACY
+library(dplyr)
+exp3_mcq_acc = group_by(exp3_mcq, Subject, PrimeType) %>%
+    summarise_at(vars(MCQAcc), mean)
+
+exp3_mcq_acc_aov = aov(data = exp3_mcq_acc, MCQAcc ~ PrimeType + 
+                              Error(Subject/PrimeType))
+summary(exp3_mcq_acc_aov)
+
+## SPECIFIC T TESTS
+
+e3_mcq_p = exp3_mcq_acc %>% filter(PrimeType == "p")
+e3_mcq_r = exp3_mcq_acc %>% filter(PrimeType == "r")
+e3_mcq_b = exp3_mcq_acc %>% filter(PrimeType == "b")
+e3_mcq_u = exp3_mcq_acc %>% filter(PrimeType == "u")
+
+t.test(e3_mcq_r$MCQAcc, e3_mcq_u$MCQAcc, paired = TRUE) ##sig
+t.test(e3_mcq_r$MCQAcc, e3_mcq_p$MCQAcc, paired = TRUE) ##not sig
+
+
+ezANOVA(data = exp3_mcq_acc, wid = .(Subject),
+        dv = .(MCQAcc), within =.(PrimeType))
+
+
+exp3_mcqacc_lsm = lsmeans::lsmeans(exp3_mcq_acc_aov, c("PrimeType"))
+prime_effect = cld(exp3_mcqacc_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.1))
+
+
+## MULTIPLE CHOICE ERRORS
+
+## before we do ANOVA, we need to replace NAs with 0.
+
+for (i in 1: nrow(exp3_mcq)){
+   if(is.na(exp3_mcq[i,7])){
+     exp3_mcq[i,7] = 0
+   }
+  
+}
+exp3_mcq_aov = aov(data = exp3_mcq, Proportion ~ PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(exp3_mcq_aov)
+library(ez)
+ezANOVA(data = exp3_mcq, wid = .(Subject),
+        dv = .(Proportion), within =.(PrimeType, ChosenPrime))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp3_errors_lsm = lsmeans::lsmeans(exp3_mcq_aov, c("PrimeType", "ChosenPrime"))
+prime_effect = cld(exp3_errors_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeType"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.8))
+@
+
+\subsection*{Exp 3: State Data}
+
+<<>>=
+
+## just state
+exp3_state_aov = aov(data = exp3_state, Trials ~ State + 
+                                        Error(Subject/State))
+summary(exp3_state_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp3_state_lsm = lsmeans::lsmeans(exp3_state_aov, c("State"))
+prime_effect = cld(exp3_state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+##state by prime
+exp3_stateprime_aov = aov(data = exp3_state_prime, Trials ~ PrimeCondition*State + 
+                                        Error(Subject/(PrimeCondition*State)))
+summary(exp3_stateprime_aov)
+
+library(ez)
+ezANOVA(data = exp3_state_prime, wid = .(Subject),
+        dv = .(Trials), within =.(PrimeCondition, State))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp3_state_lsm = lsmeans::lsmeans(exp3_stateprime_aov, c("PrimeCondition", "State"))
+prime_effect = cld(exp3_state_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeCondition"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.1))
+
+## specific t
+
+## for related primes
+e3mcq_r = exp3_mcq %>% filter(PrimeType == "r")
+
+e3mcq_r_r = e3mcq_r %>% filter(ChosenPrime == "r")
+e3mcq_r_b = e3mcq_r %>% filter(ChosenPrime == "b")
+
+t.test(e3mcq_r_r$Proportion, e3mcq_r_b$Proportion, paired = TRUE)
+
+## for both primes
+e3mcq_b = exp3_mcq %>% filter(PrimeType == "b")
+
+e3mcq_b_r = e3mcq_b %>% filter(ChosenPrime == "r")
+e3mcq_b_b = e3mcq_b %>% filter(ChosenPrime == "b")
+
+t.test(e3mcq_b_r$Proportion, e3mcq_b_b$Proportion, paired = TRUE)
+
+@
+
+\section {Comparing YA 48 ms with OA NotthePrime}
+
+<<>>=
+
+for (i in 1: nrow(final_mcq)){
+   if(is.na(final_mcq[i,7])){
+     final_mcq[i,7] = 0
+   }
+}
+
+exp3_compare_1 = subset(final_mcq, final_mcq$StudyNo == '6' | 
+                        final_mcq$StudyNo == '1')
+
+compare_aov_1 = aov(data = exp3_compare_1, Proportion ~ StudyNo*PrimeType*ChosenPrime + Error(Subject/(PrimeType*ChosenPrime)))
+summary(compare_aov_1)
+
+## specific t
+
+e3_old_b = exp3_compare_1 %>% filter(AgeGroup == "Old" & ChosenPrime == "b")
+mean_old = group_by(e3_old_b, Subject) %>%
+              summarise_at(vars(Proportion), mean)
+e3_young_b = exp3_compare_1 %>% filter(AgeGroup == "Young" & ChosenPrime == "b")
+mean_young = group_by(e3_young_b, Subject) %>%
+              summarise_at(vars(Proportion), mean)
+
+t.test(mean_young$Proportion, mean_old$Proportion)
+
+### e2 young and e3 young
+exp3_compare_2 = subset(final_mcq, final_mcq$StudyNo == '1' | 
+                        final_mcq$StudyNo == '5')
+compare_aov_2 = aov(data = exp3_compare_2, Proportion ~ StudyNo*PrimeType*ChosenPrime + Error(Subject/(PrimeType*ChosenPrime)))
+summary(compare_aov_2)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+compare_lsm = lsmeans::lsmeans(compare_aov_1, c("StudyNo", "ChosenPrime"))
+prime_effect = multcomp::cld(compare_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("ChosenPrime"))
+
+knitr::kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+@
+
+\section {Multiple Choice: Only R and B}
+
+<<>>=
+### EXPERIMENT 1 ####
+## MULTIPLE CHOICE ACCURACY 
+exp1_mcqacc_subset = subset(exp1_mcq_acc, exp1_mcq_acc$PrimeType == 'r' | 
+                                exp1_mcq_acc$PrimeType == 'b')
+exp1_mcqacc_subset_aov = aov(data = exp1_mcqacc_subset, MCQAcc ~ PrimeType + 
+                              Error(Subject/PrimeType))
+summary(exp1_mcqacc_subset_aov)
+
+ezANOVA(data = exp1_mcqacc_subset, wid = .(Subject),
+        dv = .(MCQAcc), within =.(PrimeType),
+        between = .(AgeGroup))
+
+## MULTIPLE CHOICE ERRORS: only when they chose b or r
+
+exp1_mcq_subset = subset(exp1_mcq, exp1_mcq$ChosenPrime == "r" | 
+                            exp1_mcq$ChosenPrime == 'b')
+
+## before we do ANOVA, we need to replace NAs with 0.
+
+for (i in 1: nrow(exp1_mcq_subset)){
+   if(is.na(exp1_mcq_subset[i,7])){
+     exp1_mcq_subset[i,7] = 0
+   }
+  
+}
+exp1_mcq_subset_aov = aov(data = exp1_mcq_subset, Proportion ~ AgeGroup*PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(exp1_mcq_subset_aov)
+
+library(ez)
+ezANOVA(data = exp1_mcq_subset, wid = .(Subject),
+        dv = .(Proportion), within =.(PrimeType, ChosenPrime),
+        between = .(AgeGroup))
+
+#### EXPERIMENT 2 #####
+
+exp2_mcq_subset = subset(exp2_mcq, exp2_mcq$ChosenPrime == "r" | 
+                            exp2_mcq$ChosenPrime == 'b')
+
+## before we do ANOVA, we need to replace NAs with 0.
+
+for (i in 1: nrow(exp2_mcq_subset)){
+   if(is.na(exp2_mcq_subset[i,7])){
+     exp2_mcq_subset[i,7] = 0
+   }
+  
+}
+exp2_mcq_subset_aov = aov(data = exp2_mcq_subset, Proportion ~ AgeGroup*PrimeType*ChosenPrime + 
+                                  Error(Subject/(PrimeType*ChosenPrime)))
+summary(exp2_mcq_subset_aov)
+
+library(ez)
+ezANOVA(data = exp2_mcq_subset, wid = .(Subject),
+        dv = .(Proportion), within =.(PrimeType, ChosenPrime),
+        between = .(AgeGroup))
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+exp2_errors_subset_lsm = lsmeans::lsmeans(exp2_mcq_subset_aov, 
+                                          c("AgeGroup", "PrimeType", "ChosenPrime"))
+prime_effect = cld(exp2_errors_subset_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("PrimeType", "ChosenPrime"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+@
+
+\section {Recoding RPBU to Sound Meaning}
+
+<<>>=
+for(i in 1: nrow(final_j)) {
+  
+  if(final_j[i,5] == "Related"){
+    final_j[i,7] = "No"
+    final_j[i,8] = "Yes"
+  }
+  else if(final_j[i,5] == "Both"){
+    final_j[i,7] = "Yes"
+    final_j[i,8] = "Yes"
+  }
+  
+  else if(final_j[i,5] == "Phonological"){
+    final_j[i,7] = "Yes"
+    final_j[i,8] = "No"
+
+  }
+  else {
+    final_j[i,7] = "No"
+    final_j[i,8] = "No"
+  }
+}
+
+colnames(final_j) = c("AgeGroup", "Subject", "StudyNo", "PrimeInstruction", "PrimeCondition", 
+                      "Accuracy", "Sound", "Meaning")
+
+@
+
+\section {Experiment 1: Sound Meaning}
+
+<<>>=
+
+### CONFUSED: ASK DAVE!
+soundmeaning_exp1_target = subset(final_j, final_j$StudyNo == '2' | final_j$StudyNo == '4')
+#soundmeaning_exp1_mcq = subset(final_mcq, final_mcq$StudyNo == '2' | final_mcq$StudyNo == '4')
+
+sm_exp1_target_aov = aov(data = soundmeaning_exp1_target, Accuracy ~ AgeGroup*Sound*Meaning + 
+                                Error (Subject/(Sound*Meaning)))
+summary(sm_exp1_target_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+sm_exp1_lsm = lsmeans::lsmeans(sm_exp1_target_aov, 
+                                          c("AgeGroup", "Sound", "Meaning"))
+prime_effect = cld(sm_exp1_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup", "Meaning"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+@
+
+\section {Collapsing the 4 experiments}
+
+<<>>=
+final_mcq_main4 = subset(final_mcq, final_mcq$StudyNo != '1')
+
+for (i in 1: nrow(final_mcq_main4)){
+   if(is.na(final_mcq_main4[i,7])){
+     final_mcq_main4[i,7] = 0
+   }
+}
+
+fourway_aov = aov(data = final_mcq_main4, Proportion ~ AgeGroup*PrimeInstruction*PrimeType*ChosenPrime + Error(Subject/(PrimeType*ChosenPrime)))
+summary(fourway_aov)
+
+
+library(ez)
+ezANOVA(data = final_mcq_main4, wid = .(Subject),
+        dv = .(Proportion), within =.(PrimeType, ChosenPrime),
+        between = .(AgeGroup, PrimeInstruction)) ## IMPORTANT SPHERICITY
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+fourway_lsm = lsmeans::lsmeans(fourway_aov, 
+                                  c("AgeGroup", "PrimeInstruction", "PrimeType", "ChosenPrime"))
+prime_effect = cld(fourway_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = c("AgeGroup", "PrimeType", "ChosenPrime"))
+
+kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
+
+## SPECIFIC T-TEST
+
+## Effect of Instruction on Young
+
+## Semantic
+
+y_r = final_mcq_main4 %>% filter(AgeGroup == "Young" & PrimeType == "r")
+y_r_r_no = y_r %>% filter(PrimeInstruction == "NoInstruction" & ChosenPrime == "r")
+y_r_r_yes = y_r %>% filter(PrimeInstruction != "NoInstruction" & ChosenPrime == "r")
+
+t.test(y_r_r_no$Proportion, y_r_r_yes$Proportion)
+
+## Both
+
+y_b = final_mcq_main4 %>% filter(AgeGroup == "Young" & PrimeType == "b")
+y_b_b_no = y_b %>% filter(PrimeInstruction == "NoInstruction" & ChosenPrime == "b")
+y_b_b_yes = y_b %>% filter(PrimeInstruction != "NoInstruction" & ChosenPrime == "b")
+
+t.test(y_b_b_no$Proportion, y_b_b_yes$Proportion)
+
+## Effect of Instruction on Old
+
+## Semantic
+o_r = final_mcq_main4 %>% filter(AgeGroup == "Old" & PrimeType == "r")
+o_r_r_no = o_r %>% filter(PrimeInstruction == "NoInstruction" & ChosenPrime == "r")
+o_r_r_yes = o_r %>% filter(PrimeInstruction != "NoInstruction" & ChosenPrime == "r")
+
+t.test(o_r_r_no$Proportion, o_r_r_yes$Proportion)
+
+## Both
+
+o_b = final_mcq_main4 %>% filter(AgeGroup == "Old" & PrimeType == "b")
+o_b_b_no = o_b %>% filter(PrimeInstruction == "NoInstruction" & ChosenPrime == "b")
+o_b_b_yes = o_b %>% filter(PrimeInstruction != "NoInstruction" & ChosenPrime == "b")
+
+t.test(o_b_b_no$Proportion, o_b_b_yes$Proportion)
+
+                                      
+
+@
+
+\section {Tables and Figures}
+
+\subsection*{Experiment 1}
+
+\subsubsection*{State data}
+
+<<>>=
+library(Rmisc)
+exp1_fig_state = summarySE(exp1_state_prime, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "PrimeCondition", "State"))
+
+library(ggplot2)
+library(ggthemes)
+exp1_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Both", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    RetrievalState = factor(State, levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")))%>%
+ggplot(aes(x = PrimeType, y = Trials, 
+                              fill = RetrievalState, group = RetrievalState))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7)+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+  facet_wrap(~AgeGroup)+
+ theme_few()+
+  scale_fill_calc()+
+    xlab("Prime Type") + ylab("Mean Number of Trials") + 
+  ggtitle("Experiment 1: State by Prime Type")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection*{Target Accuracy}
+
+<<>>=
+library(Rmisc)
+exp1_fig_target = summarySE(exp1_target, 
+                        measurevar = "Accuracy",
+                        groupvars = c("AgeGroup", "PrimeCondition"))
+
+exp1_fig_target =  arrange(exp1_fig_target, AgeGroup, decreasing = TRUE)
+            
+library(ggplot2)
+library(ggthemes)
+exp1_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Phon+Sem", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young", "Old")))%>%
+ggplot(aes(x = PrimeType, y = Accuracy, 
+                              fill = Age, group = Age))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
+  geom_errorbar(aes(ymin=Accuracy - ci, ymax=Accuracy + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  scale_fill_manual(values = c("royalblue4", "slategray1"))+
+    xlab("Prime Type") + ylab("Mean Target Accuracy") + 
+  ggtitle("Experiment 1: Target Retrieval Accuracy")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.4), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection*{MCQ Table}
+
+<<>>=
+## CODE BELOW IS IF WE WANT MCQ NUMBERS FOR SAME/DIFFERENT PRIME CHOICE
+for(i in 1:nrow(exp1_mcq)){
+  if(exp1_mcq[i,"PrimeType"] == exp1_mcq[i,"ChosenPrime"]){
+    exp1_mcq[i,"MCQChoice"] = "Same"
+  }
+  else {
+    exp1_mcq[i,"MCQChoice"] = "Different"
+  }
+  
+}
+
+e1_mcq_yn = group_by(exp1_mcq, Subject, AgeGroup, StudyNo, 
+                         PrimeType, MCQChoice ) %>%
+                  summarise_at(vars(Proportion), sum)
+
+e1_mcq_agg_yn = summarySE(e1_mcq_agg_yn, 
+                        measurevar = "Proportion",
+                        groupvars = c("AgeGroup", "PrimeType", "MCQChoice"))
+
+## CODE BELOW ONLY FOR R AND B CHOICES in MCQ 
+
+e1_mcq_agg = summarySE(e1_mcq_agg, 
+                        measurevar = "Proportion",
+                        groupvars = c("AgeGroup", "PrimeType", "ChosenPrime"))
+                      
+
+e1_mcq_main = e1_mcq_agg %>% filter(PrimeType %in% c("b", "r") & 
+                                             ChosenPrime %in% c("b", "r"))
+
+e1_mcq_main$ChoseThePrime = c("1_Yes", "2_No", "2_No", "1_Yes", 
+                              "1_Yes", "2_No", "2_No", "1_Yes")
+library(ggplot2)
+library(ggthemes)
+e1_mcq_main %>% mutate(PrimeCondition = factor(PrimeType, 
+                                                 levels = unique(PrimeType),
+                    labels = c("Phon+Sem","Semantic")),
+                    ChoseThePrime = factor(ChoseThePrime, 
+                                                 levels = unique(ChoseThePrime),
+                    labels = c("Yes","No")))%>%
+ggplot(aes(x = PrimeCondition, y = Proportion, 
+                              fill = ChoseThePrime, group = ChoseThePrime))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
+  geom_errorbar(aes(ymin=Proportion - ci, ymax=Proportion + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+  facet_wrap(~AgeGroup)+
+ theme_few()+
+  scale_fill_manual(values = c("gray", "black"))+
+    xlab("Prime Given") + ylab("Mean Proportion of Errors") + 
+  ggtitle("Experiment 1: Multiple-Choice Errors")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+
+## Stored and formatted in excel file: JuliePaperTables.xlsx
+@
+
+\subsection*{Experiment 2}
+
+\subsubsection*{State data}
+
+<<>>=
+library(Rmisc)
+exp1_fig_state = summarySE(exp2_state_prime, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "PrimeCondition", "State"))
+
+library(ggplot2)
+library(ggthemes)
+exp1_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Both", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    RetrievalState = factor(State, levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")))%>%
+ggplot(aes(x = PrimeType, y = Trials, 
+                              fill = RetrievalState, group = RetrievalState))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7)+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+  facet_wrap(~AgeGroup)+
+ theme_few()+
+  scale_fill_calc()+
+    xlab("Prime Type") + ylab("Mean Number of Trials") + 
+  ggtitle("Experiment 2: State by Prime Type")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection*{Target Accuracy}
+
+<<>>=
+library(Rmisc)
+exp2_fig_target = summarySE(exp2_target, 
+                        measurevar = "Accuracy",
+                        groupvars = c("AgeGroup", "PrimeCondition"))
+exp2_fig_target =  arrange(exp2_fig_target, AgeGroup, decreasing = TRUE)
+            
+library(ggplot2)
+library(ggthemes)
+exp2_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Phon+Sem", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young", "Old")))%>%
+ggplot(aes(x = PrimeType, y = Accuracy, 
+                              fill = Age, group = Age))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
+  geom_errorbar(aes(ymin=Accuracy - ci, ymax=Accuracy + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  scale_fill_manual(values = c("royalblue4", "slategray1"))+
+    xlab("Prime Type") + ylab("Mean Target Accuracy") + 
+  ggtitle("Experiment 2: Target Retrieval Accuracy")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.4), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection*{MCQ Table}
+
+<<>>=
+e2_mcq_agg = summarySE(exp2_mcq, 
+                        measurevar = "Proportion",
+                        groupvars = c("AgeGroup", "PrimeType", "ChosenPrime"))
+
+e2_mcq_main = e2_mcq_agg %>% filter(PrimeType %in% c("b", "r") & 
+                                             ChosenPrime %in% c("b", "r"))
+e2_mcq_main$ChoseThePrime = c("1_Yes", "2_No", "2_No", "1_Yes", 
+                              "1_Yes", "2_No", "2_No", "1_Yes")
+library(ggplot2)
+library(ggthemes)
+e2_mcq_main %>% mutate(PrimeCondition = factor(PrimeType, 
+                                                 levels = unique(PrimeType),
+                    labels = c("Phon+Sem","Semantic")),
+                    ChoseThePrime = factor(ChoseThePrime, 
+                                                 levels = unique(ChoseThePrime),
+                    labels = c("Yes","No")))%>%
+ggplot(aes(x = PrimeCondition, y = Proportion, 
+                              fill = ChoseThePrime, group = ChoseThePrime))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
+  geom_errorbar(aes(ymin=Proportion - ci, ymax=Proportion + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+  facet_wrap(~AgeGroup)+
+ theme_few()+
+  scale_fill_manual(values = c("gray", "black", "white"))+
+    xlab("Prime Given") + ylab("Mean Proportion of Errors") + 
+  ggtitle("Experiment 2: Multiple-Choice Errors")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+
+## Stored and formatted in excel file: JuliePaperTables.xlsx
+
+@
+
+\subsection*{Experiment 3}
+
+\subsubsection*{State data}
+
+<<>>=
+library(Rmisc)
+exp3_fig_state = summarySE(exp3_state_prime, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "PrimeCondition", "State"))
+
+library(ggplot2)
+library(ggthemes)
+exp3_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Both", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    RetrievalState = factor(State, levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")))%>%
+ggplot(aes(x = PrimeType, y = Trials, 
+                              fill = RetrievalState, group = RetrievalState))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7)+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  scale_fill_calc()+
+    xlab("Prime Type") + ylab("Mean Number of Trials") + 
+  ggtitle("Experiment 3: State by Prime Type")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection*{Target Accuracy}
+
+<<>>=
+library(Rmisc)
+exp3_fig_target = summarySE(exp3_target, 
+                        measurevar = "Accuracy",
+                        groupvars = c("AgeGroup", "PrimeCondition"))
+
+library(ggplot2)
+library(ggthemes)
+exp3_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Phon+Sem", "Phonological", 
+                               "Semantic", "Unrelated")))%>%
+ggplot(aes(x = PrimeType, y = Accuracy))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.6, 
+          fill = "royalblue4", color = "black")+
+  geom_errorbar(aes(ymin=Accuracy - ci, ymax=Accuracy + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  #scale_fill_manual(values = c("darkred", "forestgreen"))+
+    xlab("Prime Type") + ylab("Mean Target Accuracy") + 
+  ggtitle("Experiment 3: Target Retrieval Accuracy")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.4), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection*{MCQ Table}
+
+<<>>=
+
+e3_mcqoverall_agg = group_by(exp3_mcq, AgeGroup, PrimeType, ChosenPrime)%>%
+  summarise_at(vars(MCQAcc), mean)
+
+## Plotting
+
+e3_mcq_agg = summarySE(exp3_mcq, 
+                        measurevar = "Proportion",
+                        groupvars = c("PrimeType", "ChosenPrime"))
+
+e3_mcq_main = e3_mcq_agg %>% filter(PrimeType %in% c("b", "r") & 
+                                             ChosenPrime %in% c("b", "r"))
+e3_mcq_main$ChoseThePrime = c("1_Yes", "2_No", "2_No", "1_Yes")
+library(ggplot2)
+library(ggthemes)
+e3_mcq_main %>% mutate(PrimeCondition = factor(PrimeType, 
+                                                 levels = unique(PrimeType),
+                    labels = c("Phon+Sem","Semantic")),
+                    ChoseThePrime = factor(ChoseThePrime, 
+                                                 levels = unique(ChoseThePrime),
+                    labels = c("Yes","No")))%>%
+ggplot(aes(x = PrimeCondition, y = Proportion, 
+                              fill = ChoseThePrime, group = ChoseThePrime))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
+  geom_errorbar(aes(ymin=Proportion - ci, ymax=Proportion + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  scale_fill_manual(values = c("gray", "black", "white"))+
+    xlab("Prime Given") + ylab("Mean Proportion of Errors") + 
+  ggtitle("Experiment 3: Multiple-Choice Errors")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+
+## Stored and formatted in excel file: JuliePaperTables.xlsx
+
+@
+\subsection *{E3 and E2 compare}
+
+<<>>=
+library(Rmisc)
+exp3_fig_compare_1 = summarySE(exp3_compare_1, 
+                        measurevar = "Proportion",
+                        groupvars = c("StudyNo", "PrimeType", "ChosenPrime"))
+
+exp3_fig_compare_2 = summarySE(exp3_compare_2, 
+                        measurevar = "Proportion",
+                        groupvars = c("StudyNo", "PrimeType", "ChosenPrime"))
+
+e3_main_1 = exp3_fig_compare_1 %>% filter(PrimeType %in% c("b", "r") & 
+                                             ChosenPrime %in% c("b", "r"))
+
+e3_main_2 = exp3_fig_compare_2 %>% filter(PrimeType %in% c("b", "r") & 
+                                             ChosenPrime %in% c("b", "r"))
+                                          
+exp3_mainfig =  full_join(e3_main_1, e3_main_2)
+
+exp3_mainfig$ChoseThePrime = c("1_Yes", "2_No", "2_No", "1_Yes", 
+                              "1_Yes", "2_No", "2_No", "1_Yes",
+                              "1_Yes", "2_No", "2_No", "1_Yes")
+
+library(ggplot2)
+library(ggthemes)
+exp3_mainfig %>% mutate(PrimeCondition = factor(PrimeType, 
+                                                 levels = unique(PrimeType),
+                    labels = c("Phon+Sem","Semantic")),
+                    ChosenPrime = factor(ChosenPrime, 
+                                                 levels = unique(PrimeType),
+                    labels = c("Both","Semantic")),
+                    Experiment = factor(StudyNo, 
+                                                 levels = unique(StudyNo),
+                    labels = c("E3 (Young:Threshold)","E2 (Old:Instruction)",
+                               "E2 (Young:Instruction)")),
+                    Choice = factor(ChoseThePrime, 
+                                                 levels = unique(ChoseThePrime),
+                    labels = c("Prime Chosen","Prime Not Chosen")))%>%
+ggplot(aes(x = PrimeCondition, y = Proportion, 
+                              fill = Choice, group = Choice))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
+  geom_errorbar(aes(ymin=Proportion - ci, ymax=Proportion + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+  facet_wrap(~Experiment)+
+ theme_few()+
+  scale_fill_manual(values = c("white", "black"))+
+    xlab("Prime Given") + ylab("Mean Proportion of Errors") + 
+  ggtitle("Experiment 2 vs 3: Multiple-Choice Errors")  +
+   theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+
+\end{document}
