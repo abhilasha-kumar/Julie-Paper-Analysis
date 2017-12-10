@@ -187,6 +187,9 @@ t.test(target_p$Accuracy, target_r$Accuracy, paired = TRUE)
 t.test(target_p$Accuracy, target_b$Accuracy, paired = TRUE)
 t.test(target_p$Accuracy, target_u$Accuracy, paired = TRUE)
 
+t.test(target_b$Accuracy, target_r$Accuracy, paired = TRUE)
+t.test(target_r$Accuracy, target_u$Accuracy, paired = TRUE)
+
 
 @
 
@@ -370,6 +373,11 @@ target_u = exp2_target %>% filter(PrimeCondition == "Unrelated")
 t.test(target_p$Accuracy, target_r$Accuracy, paired = TRUE)
 t.test(target_p$Accuracy, target_b$Accuracy, paired = TRUE)
 t.test(target_p$Accuracy, target_u$Accuracy, paired = TRUE)
+
+t.test(target_b$Accuracy, target_u$Accuracy, paired = TRUE)
+
+
+
 @
 
 \subsection*{Exp 2: Multiple Choice}
@@ -558,6 +566,20 @@ prime_effect = cld(exp3_target_lsm, alpha = 0.05,
                 adjust = "tukey", details = TRUE)
 
 kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 1 ))
+
+## specific t-tests
+target_p = exp3_target %>% filter(PrimeCondition == "Phonological")
+target_r = exp3_target %>% filter(PrimeCondition == "Related")
+target_b = exp3_target %>% filter(PrimeCondition == "Both")
+target_u = exp3_target %>% filter(PrimeCondition == "Unrelated")
+
+t.test(target_p$Accuracy, target_r$Accuracy, paired = TRUE)
+t.test(target_p$Accuracy, target_b$Accuracy, paired = TRUE)
+t.test(target_p$Accuracy, target_u$Accuracy, paired = TRUE)
+
+t.test(target_b$Accuracy, target_r$Accuracy, paired = TRUE)
+t.test(target_b$Accuracy, target_u$Accuracy, paired = TRUE)
+
 @
 
 \subsection*{Exp 3: Multiple Choice}
@@ -1324,6 +1346,100 @@ ggplot(aes(x = PrimeCondition, y = Proportion,
           legend.title = element_blank(),
           plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\section {HLM Approaches}
+
+\section{Target Accuracy}
+<<>>=
+main = read.csv("Julie_Main5Studies.csv", header = TRUE, sep = ",")
+main$StudyNo = as.factor(main$StudyNo)
+main$PrimeCondition = as.factor(main$PrimeCondition)
+
+library(lme4)
+exp_hlm = glmer(data = main, Accuracy ~ AgeGroup*PrimeCondition +
+                        (1|Subject), family = "binomial")
+summary(exp_hlm)
+@
+
+\section {M Turk Rating Data}
+
+\subsection *{Calculating item level accuracies}
+
+<<>>=
+itemratings = read.csv("item_level_ratings.csv", header = TRUE, sep = ",")
+main = read.csv("Julie_Main5Studies.csv", header = TRUE, sep = ",")
+
+main_item = merge(main, itemratings, by = "Target")
+main_item = dplyr::arrange(main_item, StudyNo, Subject, Procedure.y)
+
+## but we also need item-level accuracy data
+library(dplyr)
+item_acc = group_by(main_item, TargetNo) %>%
+  summarise_at(vars(Accuracy), mean)
+colnames(item_acc) = c("TargetNo", "ItemAcc")
+
+main_item = merge(main_item, item_acc, by = c("TargetNo"))
+main_item = dplyr::arrange(main_item, StudyNo, Subject, Procedure.y)
+## Now we run an HLM for each prime condition separately
+@
+
+\subsection *{Predicting Accuracy Using Rating}
+
+<<>>=
+Phon = main_item %>% filter(PrimeCondition == "P" & 
+                                   Procedure.y == "Sound"  & 
+                                  PrimeType == "Phonological")
+Sem = main_item %>% filter(PrimeCondition == "R" & 
+                             PrimeType == "Semantic")
+Both_Phon = main_item %>% filter(PrimeCondition == "B" & 
+                                   Procedure.y == "Sound"  & 
+                                   PrimeType == "Both")
+Both_Sem = main_item %>% filter(PrimeCondition == "B" & 
+                                  Procedure.y == "Meaning" & 
+                                  PrimeType == "Both")
+@
+
+\subsubsection *{Phonological Performance}
+
+<<>>=
+library(lme4)
+
+phon_model = glmer(data = Phon, Accuracy ~ Rating*ItemAcc + 
+                     (1|Subject), family = "binomial")
+summary(phon_model)
+
+sem_model = glmer(data = Sem, Accuracy ~ Rating*Procedure.y  + 
+                     (1|Subject), family = "binomial")
+summary(sem_model)
+
+## seems that ratings have an overall effect on accuracy, but not above and beyond the mean level accuracy of the item itself. 
+@
+
+\subsubsection* {Plotting}
+
+<<>>=
+Phon_perf = group_by(Phon, TargetNo) %>%
+  summarise_at(vars(Accuracy, Rating, ItemAcc), mean)
+
+library(tidyr)
+Phon_long = Phon_perf %>%
+  gather(Type, Value, Accuracy, ItemAcc)
+
+Phon_long = dplyr::arrange(Phon_long, TargetNo)
+Phon_long$Type = as.factor(Phon_long$Type)
+
+## IMMEDIATE
+library(ggplot2)
+library(ggthemes)
+Phon_long %>% 
+ggplot(aes(x = Rating, y = Value, group = Type, color = Type))+
+geom_smooth(method = "lm") + 
+#geom_errorbar(aes(ymin = Value - ci, ymax = Value + ci),
+ #               width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Rating") + ylab("Value") + 
+  ggtitle("")
 @
 
 
