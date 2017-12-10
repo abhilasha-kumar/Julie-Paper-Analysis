@@ -1367,11 +1367,13 @@ summary(exp_hlm)
 \subsection *{Calculating item level accuracies}
 
 <<>>=
-itemratings = read.csv("item_level_ratings.csv", header = TRUE, sep = ",")
+itemratings= read.csv("item_ratings_wide.csv", 
+                             header = TRUE, sep = ",")
+
 main = read.csv("Julie_Main5Studies.csv", header = TRUE, sep = ",")
 
 main_item = merge(main, itemratings, by = "Target")
-main_item = dplyr::arrange(main_item, StudyNo, Subject, Procedure.y)
+main_item = dplyr::arrange(main_item, StudyNo, Subject, TargetNo, PrimeType)
 
 ## but we also need item-level accuracy data
 library(dplyr)
@@ -1380,23 +1382,21 @@ item_acc = group_by(main_item, TargetNo) %>%
 colnames(item_acc) = c("TargetNo", "ItemAcc")
 
 main_item = merge(main_item, item_acc, by = c("TargetNo"))
-main_item = dplyr::arrange(main_item, StudyNo, Subject, Procedure.y)
+main_item = dplyr::arrange(main_item, StudyNo, Subject, TargetNo, PrimeType)
 ## Now we run an HLM for each prime condition separately
 @
 
 \subsection *{Predicting Accuracy Using Rating}
 
 <<>>=
+
 Phon = main_item %>% filter(PrimeCondition == "P" & 
-                                   Procedure.y == "Sound"  & 
                                   PrimeType == "Phonological")
 Sem = main_item %>% filter(PrimeCondition == "R" & 
                              PrimeType == "Semantic")
 Both_Phon = main_item %>% filter(PrimeCondition == "B" & 
-                                   Procedure.y == "Sound"  & 
                                    PrimeType == "Both")
 Both_Sem = main_item %>% filter(PrimeCondition == "B" & 
-                                  Procedure.y == "Meaning" & 
                                   PrimeType == "Both")
 @
 
@@ -1405,42 +1405,148 @@ Both_Sem = main_item %>% filter(PrimeCondition == "B" &
 <<>>=
 library(lme4)
 
-phon_model = glmer(data = Phon, Accuracy ~ Rating*ItemAcc + 
+phon_model = glmer(data = Phon, Accuracy ~ SoundRating + 
                      (1|Subject), family = "binomial")
 summary(phon_model)
 
-sem_model = glmer(data = Sem, Accuracy ~ Rating*Procedure.y  + 
+sem_model = glmer(data = Sem, Accuracy ~ MeaningRating  + 
                      (1|Subject), family = "binomial")
 summary(sem_model)
+
+both_phon_model = glmer(data = Both_Phon, Accuracy ~ SoundRating  + 
+                     (1|Subject), family = "binomial")
+summary(both_phon_model)
+
+
+both_sem_model = glmer(data = Both_Sem, Accuracy ~ MeaningRating  + 
+                     (1|Subject), family = "binomial")
+summary(both_sem_model)
 
 ## seems that ratings have an overall effect on accuracy, but not above and beyond the mean level accuracy of the item itself. 
 @
 
-\subsubsection* {Plotting}
+\subsubsection* {Plotting Model Fits}
+
+\subsubsection*{Phonological}
 
 <<>>=
-Phon_perf = group_by(Phon, TargetNo) %>%
-  summarise_at(vars(Accuracy, Rating, ItemAcc), mean)
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      SoundRating = seq(1,7,1))) 
+fixed.frame$pred = predict(phon_model, newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
 
-library(tidyr)
-Phon_long = Phon_perf %>%
-  gather(Type, Value, Accuracy, ItemAcc)
-
-Phon_long = dplyr::arrange(Phon_long, TargetNo)
-Phon_long$Type = as.factor(Phon_long$Type)
-
-## IMMEDIATE
-library(ggplot2)
-library(ggthemes)
-Phon_long %>% 
-ggplot(aes(x = Rating, y = Value, group = Type, color = Type))+
-geom_smooth(method = "lm") + 
-#geom_errorbar(aes(ymin = Value - ci, ymax = Value + ci),
- #               width=.05, position=position_dodge(.5)) +
+a = fixed.frame %>%
+  ggplot(aes(x = SoundRating, y = prob)) +
+    geom_line(size = 1, color = "forestgreen") +
+        labs(x = "Sound Rating for Phon Prime:Target", 
+             y = "Predicted Probabilities for Accuracy",
+         title = "Effect of Prime Rating on Accuracy in 
+         Phonological Condition") +
   theme_few()+
-  xlab("Rating") + ylab("Value") + 
-  ggtitle("")
+  ylim(0,0.40)+
+    scale_color_colorblind() +
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
 @
+
+
+\subsubsection*{Semantic}
+
+<<>>=
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      MeaningRating = seq(1,7,1))) 
+fixed.frame$pred = predict(sem_model, newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+b = fixed.frame %>%
+  ggplot(aes(x = MeaningRating, y = prob)) +
+    geom_line(size = 1, color = "red") +
+        labs(x = "Meaning Rating for Sem Prime:Target", 
+             y = "Predicted Probabilities for Accuracy",
+         title = "Effect of Prime Rating on Accuracy in 
+         Semantic Condition") +
+  ylim(0,0.40)+
+  theme_few()+
+    scale_color_colorblind() +
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+\subsubsection*{Both_Sem}
+
+<<>>=
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      MeaningRating = seq(1,7,1))) 
+fixed.frame$pred = predict(both_sem_model, 
+                           newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+c = fixed.frame %>%
+  ggplot(aes(x = MeaningRating, y = prob)) +
+    geom_line(size = 1, color = "red") +
+        labs(x = "Meaning Rating for Both Prime:Target", 
+             y = "Predicted Probabilities for Accuracy",
+         title = "Effect of Prime Rating on Accuracy in 
+         Both Condition") +
+  ylim(0,0.40)+
+  theme_few()+
+    scale_color_colorblind() +
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+\subsubsection*{Both_Phon}
+
+<<>>=
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      SoundRating = seq(1,7,1))) 
+fixed.frame$pred = predict(both_phon_model, 
+                           newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+d = fixed.frame %>%
+  ggplot(aes(x = SoundRating, y = prob)) +
+    geom_line(size = 1, color = "forestgreen") +
+        labs(x = "Sound Rating for Both Prime:Target", 
+             y = "Predicted Probabilities for Accuracy",
+         title = "Effect of Prime Rating on Accuracy in 
+         Both Condition") +
+  theme_few()+
+  ylim(0,0.40)+
+    scale_color_colorblind() +
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+<<>>=
+library(gridExtra)
+grid.arrange(a,b,c,d)
+@
+
 
 
 \end{document}
