@@ -141,6 +141,157 @@ final_statedata$Subject <- as.factor(final_statedata$Subject)
 final_statedata$StudyNo <- as.factor(final_statedata$StudyNo)
 final_statedata$PrimeInstruction <- as.factor(final_statedata$PrimeInstruction)
 final_statedata$State <- as.factor(final_statedata$State)
+
+
+### STATE DATA SPLIT BY TARGET ACCURACY
+
+data = read.csv("Julie_Main5studies.csv", header = TRUE, sep = ",")
+library(dplyr)
+data_state_acc = group_by(data, Subject, AgeGroup, 
+                          StudyNo, Accuracy, Question.RESP)%>%
+  summarise(Trials = n())
+
+exp_1_state_acc = data_state_acc %>% filter(StudyNo == "2" | StudyNo == "4")
+exp_2_state_acc = data_state_acc %>% filter(StudyNo == "5" | StudyNo == "6")
+exp_3_state_acc = data_state_acc %>% filter(StudyNo == "1")
+
+@
+
+\subsection {State Accuracy Figures}
+\subsubsection *{Experiment 1}
+
+<<>>=
+library(Rmisc)
+exp1_fig_state_acc = summarySE(exp_1_state_acc, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "Question.RESP", "Accuracy"))
+
+
+exp1_fig_state_acc =  arrange(exp1_fig_state_acc, 
+                               AgeGroup, decreasing = TRUE)
+
+exp1_fig_state_acc$Accuracy = as.factor(as.character(exp1_fig_state_acc$Accuracy))
+
+library(ggplot2)
+library(ggthemes)
+ state_1_acc = exp1_fig_state_acc %>% mutate(State = factor(Question.RESP, 
+                                    levels = unique(Question.RESP),
+                            labels = c("Know", "Dont Know", "Other", "TOT")),
+                            Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young", "Old")),
+                    TargetAcc = factor(Accuracy, levels = unique(Accuracy),
+                    labels = c("Failed Retrieval", "Correct Retrieval")))%>%
+ggplot(aes(x = State, y = Trials, 
+           group = TargetAcc, fill = TargetAcc))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  facet_wrap(~Age)+
+   scale_fill_wsj()+
+ # scale_fill_manual(values = c("royalblue4", "slategray1"))+
+    xlab("") + ylab("") + 
+  ggtitle("E1: Young vs. Old (Without Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection *{Experiment 2}
+
+<<>>=
+library(Rmisc)
+exp2_fig_state_acc = summarySE(exp_2_state_acc, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "Question.RESP", "Accuracy"))
+
+
+exp2_fig_state_acc =  arrange(exp2_fig_state_acc, 
+                               AgeGroup, decreasing = TRUE)
+
+exp2_fig_state_acc$Accuracy = as.factor(as.character(exp2_fig_state_acc$Accuracy))
+
+library(ggplot2)
+library(ggthemes)
+ state_2_acc = exp2_fig_state_acc %>% mutate(State = factor(Question.RESP, 
+                                    levels = unique(Question.RESP),
+                            labels = c("Know", "Dont Know", "Other", "TOT")),
+                            Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young", "Old")),
+                    TargetAcc = factor(Accuracy, levels = unique(Accuracy),
+                    labels = c("Failed Retrieval", "Correct Retrieval")))%>%
+ggplot(aes(x = State, y = Trials, 
+           group = TargetAcc, fill = TargetAcc))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  facet_wrap(~Age)+
+   scale_fill_wsj()+
+ # scale_fill_manual(values = c("royalblue4", "slategray1"))+
+    xlab("") + ylab("") + 
+  ggtitle("E2: Young vs. Old (With Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection *{Experiment 3}
+
+<<>>=
+library(Rmisc)
+exp3_fig_state_acc = summarySE(exp_3_state_acc, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "Question.RESP", "Accuracy"))
+
+
+exp3_fig_state_acc =  arrange(exp3_fig_state_acc, 
+                               AgeGroup, decreasing = TRUE)
+
+exp3_fig_state_acc$Accuracy = as.factor(as.character(exp3_fig_state_acc$Accuracy))
+
+library(ggplot2)
+library(ggthemes)
+state_3_acc= exp3_fig_state_acc %>% mutate(State = factor(Question.RESP, 
+                                    levels = unique(Question.RESP),
+                            labels = c("Know", "Dont Know", "Other", "TOT")),
+                            Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young")),
+                    TargetAcc = factor(Accuracy, levels = unique(Accuracy),
+                    labels = c("Failed Retrieval", "Correct Retrieval")))%>%
+ggplot(aes(x = State, y = Trials, 
+           group = TargetAcc, fill = TargetAcc))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  facet_wrap(~Age)+
+   scale_fill_wsj()+
+  #scale_fill_manual(values = c("royalblue4", "slategray1"))+
+    xlab("") + ylab("") + 
+  ggtitle("E3: Young(48 ms)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection* {Combined}
+
+<<>>=
+library(grid)
+gridExtra::grid.arrange(state_1_acc, state_2_acc, state_3_acc, 
+                        nrow = 3, ncol = 1, 
+                top=textGrob("Retrieval States Across Experiments E1, E2, E3", 
+                                      gp=gpar(fontsize=20)))
 @
 
 \section {Experiment 1: YA-OA No Instruction}
@@ -188,6 +339,7 @@ t.test(target_p$Accuracy, target_b$Accuracy, paired = TRUE)
 t.test(target_p$Accuracy, target_u$Accuracy, paired = TRUE)
 
 t.test(target_b$Accuracy, target_r$Accuracy, paired = TRUE)
+t.test(target_b$Accuracy, target_u$Accuracy, paired = TRUE)
 t.test(target_r$Accuracy, target_u$Accuracy, paired = TRUE)
 
 
@@ -317,7 +469,7 @@ kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.05))
 
 e1_young_dk = exp1_state %>% filter(AgeGroup == "Young" & State == "dontknow")
 e1_old_dk = exp1_state %>% filter(AgeGroup == "Old" & State == "dontknow")
-t.test(e1_old_dk$Trials, e1_young_dk$Trials)
+t.test(e1_old_dk$Trials, e1_young_dk$Trials, var.equal = TRUE)
 
 
 e1_young_other = exp1_state %>% filter(AgeGroup == "Young" & State == "other")
@@ -739,6 +891,51 @@ knitr::kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value <
 
 @
 
+\section {Comparing Prime Type Across Experiments}
+
+<<>>=
+## final_j contains all experiments
+
+for(i in 1:nrow(final_j)){
+  
+  if(final_j[i,3] == "2" | final_j[i,3] == "4"){
+    final_j[i,"Experiment"] = "Experiment1"
+  }
+  else if(final_j[i,3] == "5" | final_j[i,3] == "6"){
+    final_j[i,"Experiment"] = "Experiment2"
+  }
+  else
+    final_j[i,"Experiment"] = "Experiment3"
+}
+
+
+final_j$Experiment = as.factor(as.character(final_j$Experiment))
+
+combined_targetacc = aov(data = final_j, Accuracy ~ PrimeCondition + 
+                           Error(Subject/PrimeCondition))
+summary(combined_targetacc)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+combined_targetacc_lsm = lsmeans::lsmeans(combined_targetacc, 
+                                          c("PrimeCondition"))
+prime_effect = cld(combined_targetacc_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 1 ))
+
+
+## PAIRWISE COMPARISONS
+
+compare_p = final_j %>% filter(PrimeCondition == "Phonological")
+compare_r = final_j %>% filter(PrimeCondition == "Related")
+compare_b = final_j %>% filter(PrimeCondition == "Both")
+compare_u = final_j %>% filter(PrimeCondition == "Unrelated")
+
+t.test(compare_p$Accuracy, compare_r$Accuracy, paired = TRUE)
+@
+
 \section {Multiple Choice: Only R and B}
 
 <<>>=
@@ -944,7 +1141,7 @@ exp1_fig_state = summarySE(exp1_state_prime,
 
 library(ggplot2)
 library(ggthemes)
-exp1_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
+state_1 = exp1_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
                                                  levels = unique(PrimeCondition),
                     labels = c("Both", "Phonological", 
                                "Semantic", "Unrelated")),
@@ -952,19 +1149,92 @@ exp1_fig_state %>% mutate(PrimeType = factor(PrimeCondition,
                             labels = c("Dont Know", "Know", "Other", "TOT")))%>%
 ggplot(aes(x = PrimeType, y = Trials, 
                               fill = RetrievalState, group = RetrievalState))+
- geom_bar(stat = "identity", position = "dodge", width = 0.7)+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
   geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
              width=.2, color = "gray26", 
              position = position_dodge(0.7))+
   facet_wrap(~AgeGroup)+
  theme_few()+
-  scale_fill_calc()+
-    xlab("Prime Type") + ylab("Mean Number of Trials") + 
-  ggtitle("Experiment 1: State by Prime Type")  +
-   theme(axis.text = element_text(face = "bold", size = rel(1)),
+  scale_fill_colorblind()+
+    xlab("") + ylab("") + 
+  ggtitle("E1: Young vs. Old (Without Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection* {State by Prime}
+
+<<>>=
+library(Rmisc)
+exp1_fig_state_prime = summarySE(exp1_state_prime, 
+                        measurevar = "Trials",
+                        groupvars = c("PrimeCondition","State"))
+
+library(ggplot2)
+library(ggthemes)
+state_1_prime = exp1_fig_state_prime %>% mutate(PrimeType = 
+                                                  factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Both", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    RetrievalState = factor(State, 
+                                    levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")))%>%
+ggplot(aes(x = PrimeType, y = Trials, 
+           group = RetrievalState, fill = RetrievalState))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+scale_fill_colorblind()+
+  xlab("") + ylab("") + 
+  ggtitle("E1: Young vs. Old (Without Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+
+@
+
+\subsubsection *{State ONLY}
+
+<<>>=
+
+library(Rmisc)
+exp1_fig_state_only = summarySE(exp1_state, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "State"))
+
+exp1_fig_state_only =  arrange(exp1_fig_state_only, 
+                               AgeGroup, decreasing = TRUE)
+
+
+library(ggplot2)
+library(ggthemes)
+state_1_only = exp1_fig_state_only %>% mutate(RetrievalState = factor(State, 
+                                    levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")),
+                            Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young", "Old")))%>%
+ggplot(aes(x = RetrievalState, y = Trials, 
+           group = Age, fill = Age))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  scale_fill_manual(values = c("royalblue4", "slategray1"))+
+    xlab("") + ylab("") + 
+  ggtitle("E1: Young vs. Old (Without Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 @
 
@@ -980,9 +1250,9 @@ exp1_fig_target =  arrange(exp1_fig_target, AgeGroup, decreasing = TRUE)
             
 library(ggplot2)
 library(ggthemes)
-exp1_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
+targetacc_1 = exp1_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
                                                  levels = unique(PrimeCondition),
-                    labels = c("Phon+Sem", "Phonological", 
+                    labels = c("Both", "Phonological", 
                                "Semantic", "Unrelated")),
                     Age = factor(AgeGroup, levels = unique(AgeGroup),
                     labels = c("Young", "Old")))%>%
@@ -994,12 +1264,12 @@ ggplot(aes(x = PrimeType, y = Accuracy,
              position = position_dodge(0.7))+
  theme_few()+
   scale_fill_manual(values = c("royalblue4", "slategray1"))+
-    xlab("Prime Type") + ylab("Mean Target Accuracy") + 
-  ggtitle("Experiment 1: Target Retrieval Accuracy")  +
-   theme(axis.text = element_text(face = "bold", size = rel(1)),
+    xlab("") + ylab("") + 
+  ggtitle("E1: Young vs. Old (Without Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.4), hjust = .5),
+         plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 @
 
@@ -1081,7 +1351,7 @@ exp1_fig_state = summarySE(exp2_state_prime,
 
 library(ggplot2)
 library(ggthemes)
-exp1_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
+state_2 = exp1_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
                                                  levels = unique(PrimeCondition),
                     labels = c("Both", "Phonological", 
                                "Semantic", "Unrelated")),
@@ -1089,19 +1359,93 @@ exp1_fig_state %>% mutate(PrimeType = factor(PrimeCondition,
                             labels = c("Dont Know", "Know", "Other", "TOT")))%>%
 ggplot(aes(x = PrimeType, y = Trials, 
                               fill = RetrievalState, group = RetrievalState))+
- geom_bar(stat = "identity", position = "dodge", width = 0.7)+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
   geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
              width=.2, color = "gray26", 
              position = position_dodge(0.7))+
   facet_wrap(~AgeGroup)+
  theme_few()+
-  scale_fill_calc()+
-    xlab("Prime Type") + ylab("Mean Number of Trials") + 
-  ggtitle("Experiment 2: State by Prime Type")  +
-   theme(axis.text = element_text(face = "bold", size = rel(1)),
+ scale_fill_colorblind()+
+    xlab("") + ylab("Mean Number of Trials") + 
+  ggtitle("E2: Young vs. Old (With Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsubsection* {State by Prime}
+
+<<>>=
+library(Rmisc)
+exp2_fig_state_prime = summarySE(exp2_state_prime, 
+                        measurevar = "Trials",
+                        groupvars = c("PrimeCondition","State"))
+
+library(ggplot2)
+library(ggthemes)
+state_2_prime = exp2_fig_state_prime %>% mutate(PrimeType = 
+                                                  factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Both", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    RetrievalState = factor(State, 
+                                    levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")))%>%
+ggplot(aes(x = PrimeType, y = Trials, 
+           group = RetrievalState, fill = RetrievalState))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+scale_fill_colorblind()+
+   xlab("") + ylab("Mean Number of Trials") + 
+  ggtitle("E2: Young vs. Old (With Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+
+
+\subsubsection *{State ONLY}
+
+<<>>=
+
+library(Rmisc)
+exp2_fig_state_only = summarySE(exp2_state, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "State"))
+
+exp2_fig_state_only =  arrange(exp2_fig_state_only, 
+                               AgeGroup, decreasing = TRUE)
+
+
+library(ggplot2)
+library(ggthemes)
+state_2_only = exp2_fig_state_only %>% mutate(RetrievalState = factor(State, 
+                                    levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")),
+                            Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young", "Old")))%>%
+ggplot(aes(x = RetrievalState, y = Trials, 
+           group = Age, fill = Age))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  scale_fill_manual(values = c("royalblue4", "slategray1"))+
+    xlab("") + ylab("") + 
+  ggtitle("E2: Young vs. Old (With Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 @
 
@@ -1116,9 +1460,9 @@ exp2_fig_target =  arrange(exp2_fig_target, AgeGroup, decreasing = TRUE)
             
 library(ggplot2)
 library(ggthemes)
-exp2_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
+targetacc_2 = exp2_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
                                                  levels = unique(PrimeCondition),
-                    labels = c("Phon+Sem", "Phonological", 
+                    labels = c("Both", "Phonological", 
                                "Semantic", "Unrelated")),
                     Age = factor(AgeGroup, levels = unique(AgeGroup),
                     labels = c("Young", "Old")))%>%
@@ -1130,12 +1474,12 @@ ggplot(aes(x = PrimeType, y = Accuracy,
              position = position_dodge(0.7))+
  theme_few()+
   scale_fill_manual(values = c("royalblue4", "slategray1"))+
-    xlab("Prime Type") + ylab("Mean Target Accuracy") + 
-  ggtitle("Experiment 2: Target Retrieval Accuracy")  +
-   theme(axis.text = element_text(face = "bold", size = rel(1)),
+   xlab("") + ylab("Mean Target Retrieval Accuracy") + 
+  ggtitle("E2: Young vs. Old (With Instructions)")  +
+   theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.4), hjust = .5),
+         plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 @
 
@@ -1194,7 +1538,7 @@ exp3_fig_state = summarySE(exp3_state_prime,
 
 library(ggplot2)
 library(ggthemes)
-exp3_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
+state_3 = exp3_fig_state %>% mutate(PrimeType = factor(PrimeCondition, 
                                                  levels = unique(PrimeCondition),
                     labels = c("Both", "Phonological", 
                                "Semantic", "Unrelated")),
@@ -1202,20 +1546,92 @@ exp3_fig_state %>% mutate(PrimeType = factor(PrimeCondition,
                             labels = c("Dont Know", "Know", "Other", "TOT")))%>%
 ggplot(aes(x = PrimeType, y = Trials, 
                               fill = RetrievalState, group = RetrievalState))+
- geom_bar(stat = "identity", position = "dodge", width = 0.7)+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
   geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
              width=.2, color = "gray26", 
              position = position_dodge(0.7))+
  theme_few()+
-  scale_fill_calc()+
-    xlab("Prime Type") + ylab("Mean Number of Trials") + 
-  ggtitle("Experiment 3: State by Prime Type")  +
-   theme(axis.text = element_text(face = "bold", size = rel(1)),
+ scale_fill_colorblind()+
+    xlab("Prime Condition") + ylab("") + 
+  ggtitle("E3: Young (Threshold Priming: 48 ms)")  +
+   theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5),
+         plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 @
+
+\subsubsection* {State by Prime}
+
+<<>>=
+library(Rmisc)
+exp3_fig_state_prime = summarySE(exp3_state_prime, 
+                        measurevar = "Trials",
+                        groupvars = c("PrimeCondition","State"))
+
+library(ggplot2)
+library(ggthemes)
+state_3_prime = exp3_fig_state_prime %>% mutate(PrimeType = 
+                                                  factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Both", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    RetrievalState = factor(State, 
+                                    levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")))%>%
+ggplot(aes(x = PrimeType, y = Trials, 
+           group = RetrievalState, fill = RetrievalState))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+ theme_few()+
+scale_fill_colorblind()+
+    xlab("Prime Condition") + ylab("") + 
+  ggtitle("E3: Young (Threshold Priming: 48 ms)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+
+\subsubsection *{State ONLY}
+
+<<>>=
+
+library(Rmisc)
+exp3_fig_state_only = summarySE(exp3_state, 
+                        measurevar = "Trials",
+                        groupvars = c("AgeGroup", "State"))
+
+
+library(ggplot2)
+library(ggthemes)
+state_3_only = exp3_fig_state_only %>% mutate(RetrievalState = factor(State, 
+                                    levels = unique(State),
+                            labels = c("Dont Know", "Know", "Other", "TOT")),
+                    Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young")))%>%
+ggplot(aes(x = RetrievalState, y = Trials, 
+           fill = Age, group = Age))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, 
+          color= "black")+
+  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+             width=.2, color = "gray26", 
+             position = position_dodge(0.7))+
+      scale_fill_manual(values = c("royalblue4"))+
+ theme_few()+
+    xlab("") + ylab("") + 
+  ggtitle("E3: Young (48 ms)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
 
 \subsubsection*{Target Accuracy}
 
@@ -1227,24 +1643,26 @@ exp3_fig_target = summarySE(exp3_target,
 
 library(ggplot2)
 library(ggthemes)
-exp3_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
+targetacc_3 = exp3_fig_target %>% mutate(PrimeType = factor(PrimeCondition, 
                                                  levels = unique(PrimeCondition),
-                    labels = c("Phon+Sem", "Phonological", 
-                               "Semantic", "Unrelated")))%>%
-ggplot(aes(x = PrimeType, y = Accuracy))+
- geom_bar(stat = "identity", position = "dodge", width = 0.6, 
-          fill = "royalblue4", color = "black")+
-  geom_errorbar(aes(ymin=Accuracy - ci, ymax=Accuracy + ci), 
+                    labels = c("Both", "Phonological", 
+                               "Semantic", "Unrelated")),
+                    Age = factor(AgeGroup, levels = unique(AgeGroup),
+                    labels = c("Young")))%>%
+ggplot(aes(x = PrimeType, y = Accuracy, fill = Age, group = Age))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black")+
+   geom_errorbar(aes(ymin=Accuracy - ci, ymax=Accuracy + ci), 
              width=.2, color = "gray26", 
              position = position_dodge(0.7))+
  theme_few()+
+    scale_fill_manual(values = c("royalblue4"))+
   #scale_fill_manual(values = c("darkred", "forestgreen"))+
-    xlab("Prime Type") + ylab("Mean Target Accuracy") + 
-  ggtitle("Experiment 3: Target Retrieval Accuracy")  +
-   theme(axis.text = element_text(face = "bold", size = rel(1)),
+   xlab("Prime Condition") + ylab("") + 
+  ggtitle("E3: Young (Threshold Priming: 48 ms)")  +
+   theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.4), hjust = .5),
+         plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 @
 
@@ -1319,7 +1737,7 @@ library(ggplot2)
 library(ggthemes)
 exp3_mainfig %>% mutate(PrimeCondition = factor(PrimeType, 
                                                  levels = unique(PrimeType),
-                    labels = c("Phon+Sem","Semantic")),
+                    labels = c("Both","Semantic")),
                     ChosenPrime = factor(ChosenPrime, 
                                                  levels = unique(PrimeType),
                     labels = c("Both","Semantic")),
@@ -1346,6 +1764,45 @@ ggplot(aes(x = PrimeCondition, y = Proportion,
           legend.title = element_blank(),
           plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
+@
+
+\subsection *{Combined State Data}
+
+<<>>=
+library(grid)
+gridExtra::grid.arrange(state_1, state_2, state_3, nrow = 3, ncol = 1, 
+                top=textGrob("Retrieval States Across Experiments 1, E2, E3", 
+                                      gp=gpar(fontsize=20)))
+@
+
+\subsection *{Combined State Prime Data}
+
+<<>>=
+library(grid)
+gridExtra::grid.arrange(state_1_prime, state_2_prime, state_3_prime, 
+                        nrow = 3, ncol = 1, 
+                top=textGrob("Retrieval States Across Experiments E1, E2, E3", 
+                                      gp=gpar(fontsize=20)))
+@
+
+
+\subsection *{Combined State ONLY Data}
+
+<<>>=
+library(grid)
+gridExtra::grid.arrange(state_1_only, state_2_only, state_3_only, 
+                        nrow = 3, ncol = 1, 
+                top=textGrob("Retrieval States Across Experiments E1, E2, E3", 
+                                      gp=gpar(fontsize=20)))
+@
+
+\subsection * {Combined Target Accuracy Data}
+
+<<>>=
+library(grid)
+gridExtra::grid.arrange(targetacc_1, targetacc_2, targetacc_3, nrow = 3, ncol = 1, 
+                top=textGrob("Target Accuracy Across Experiments 1, E2, E3", 
+                                      gp=gpar(fontsize=20)))
 @
 
 \section {HLM Approaches}
@@ -1389,9 +1846,10 @@ main_item = dplyr::arrange(main_item, StudyNo, Subject, TargetNo, PrimeType)
 \subsection *{Predicting Accuracy Using Rating}
 
 <<>>=
-
+main_item$StudyNo = as.factor(as.character(main_item$StudyNo))
 Phon = main_item %>% filter(PrimeCondition == "P" & 
                                   PrimeType == "Phonological")
+                              
 Sem = main_item %>% filter(PrimeCondition == "R" & 
                              PrimeType == "Semantic")
 Both_Phon = main_item %>% filter(PrimeCondition == "B" & 
@@ -1400,32 +1858,58 @@ Both_Sem = main_item %>% filter(PrimeCondition == "B" &
                                   PrimeType == "Both")
 @
 
-\subsubsection *{Phonological Performance}
+\subsubsection *{Models with Only Rating}
 
 <<>>=
 library(lme4)
 
-phon_model = glmer(data = Phon, Accuracy ~ SoundRating + 
+phon_model = glmer(data = Phon, Accuracy ~ SoundRating*StudyNo + 
                      (1|Subject), family = "binomial")
 summary(phon_model)
 
-sem_model = glmer(data = Sem, Accuracy ~ MeaningRating  + 
-                     (1|Subject), family = "binomial")
+sem_model = glmer(data = Sem, Accuracy ~ MeaningRating*StudyNo  + 
+                     (1|Subject) , family = "binomial")
 summary(sem_model)
 
-both_phon_model = glmer(data = Both_Phon, Accuracy ~ SoundRating  + 
+both_phon_model = glmer(data = Both_Phon, Accuracy ~ SoundRating*StudyNo  + 
                      (1|Subject), family = "binomial")
 summary(both_phon_model)
 
 
-both_sem_model = glmer(data = Both_Sem, Accuracy ~ MeaningRating  + 
+both_sem_model = glmer(data = Both_Sem, Accuracy ~ MeaningRating*StudyNo  + 
                      (1|Subject), family = "binomial")
 summary(both_sem_model)
 
 ## seems that ratings have an overall effect on accuracy, but not above and beyond the mean level accuracy of the item itself. 
 @
 
-\subsubsection* {Plotting Model Fits}
+\subsubsection *{Models with  Rating and Average Performance}
+
+<<>>=
+library(lme4)
+
+phon_model_2 = glmer(data = Phon, Accuracy ~ SoundRating*ItemAcc + 
+                     (1|Subject), family = "binomial")
+summary(phon_model_2)
+
+sem_model_2 = glmer(data = Sem, Accuracy ~ MeaningRating*ItemAcc  + 
+                     (1|Subject), family = "binomial")
+summary(sem_model_2)
+
+both_phon_model_2 = glmer(data = Both_Phon, Accuracy ~ SoundRating*ItemAcc  + 
+                     (1|Subject), family = "binomial")
+summary(both_phon_model_2)
+
+
+both_sem_model_2 = glmer(data = Both_Sem, Accuracy ~ MeaningRating*ItemAcc  + 
+                     (1|Subject), family = "binomial")
+summary(both_sem_model_2)
+
+## seems that ratings have an overall effect on accuracy, but not above and beyond the mean level accuracy of the item itself. 
+@
+
+
+\subsection* {Plotting Model Fits: Rating Only}
 
 \subsubsection*{Phonological}
 
@@ -1547,6 +2031,167 @@ library(gridExtra)
 grid.arrange(a,b,c,d)
 @
 
+\subsection* {Plotting Model Fits: Rating and Mean Accuracy}
+
+\subsubsection*{Phonological}
+
+<<>>=
+fixed.frame <- Phon %>% 
+  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
+            sd = sd(ItemAcc, na.rm = T))
+
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      SoundRating = seq(1,7,1),
+       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
+                     fixed.frame$mean,
+                     fixed.frame$mean+fixed.frame$sd))) 
+
+fixed.frame$pred = predict(phon_model_2, newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+a2 = fixed.frame %>%
+mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
+                                 labels = c("-1SD", "0SD", "1SD"))) %>%
+  ggplot(aes(x = SoundRating, y = prob, color = ItemAccuracy)) +
+  geom_line(size = 1) +
+        labs(x = "Sound Rating", 
+             y = "",
+         title = "Phonological Condition (Sound Rating)") +
+  theme_few()+
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
+@
+
+
+\subsubsection*{Semantic}
+
+<<>>=
+fixed.frame <- Phon %>% 
+  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
+            sd = sd(ItemAcc, na.rm = T))
+
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      MeaningRating = seq(1,7,1),
+       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
+                     fixed.frame$mean,
+                     fixed.frame$mean+fixed.frame$sd))) 
+
+fixed.frame$pred = predict(sem_model_2, newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+b2 = fixed.frame %>%
+mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
+                                 labels = c("-1SD", "0SD", "1SD"))) %>%
+  ggplot(aes(x = MeaningRating, y = prob, color = ItemAccuracy)) +
+  geom_line(size = 1) +
+          labs(x = "Meaning Rating", 
+             y = "",
+         title = "Semantic Condition (Meaning Rating)") +
+  theme_few()+
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
+@
+
+\subsubsection*{Both_Sem}
+
+<<>>=
+fixed.frame <- Phon %>% 
+  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
+            sd = sd(ItemAcc, na.rm = T))
+
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      MeaningRating = seq(1,7,1),
+       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
+                     fixed.frame$mean,
+                     fixed.frame$mean+fixed.frame$sd))) 
+
+fixed.frame$pred = predict(both_sem_model_2, 
+                           newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+c2 = fixed.frame %>%
+mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
+                                 labels = c("-1SD", "0SD", "1SD"))) %>%
+  ggplot(aes(x = MeaningRating, y = prob, color = ItemAccuracy)) +
+  geom_line(size = 1) +
+           labs(x = "Meaning Rating", 
+             y = "",
+         title = "Both Condition (Meaning Rating)") +
+  theme_few()+
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
+@
+
+\subsubsection*{Both_Phon}
+
+<<>>=
+fixed.frame <- Phon %>% 
+  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
+            sd = sd(ItemAcc, na.rm = T))
+
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      SoundRating = seq(1,7,1),
+       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
+                     fixed.frame$mean,
+                     fixed.frame$mean+fixed.frame$sd))) 
+
+fixed.frame$pred = predict(both_phon_model_2, 
+                           newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+d2 = fixed.frame %>%
+mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
+                                 labels = c("-1SD", "0SD", "1SD"))) %>%
+  ggplot(aes(x = SoundRating, y = prob, color = ItemAccuracy)) +
+  geom_line(size = 1) +
+         labs(x = "Sound Rating", 
+             y = "",
+         title = "Both Condition (Sound Rating)") +
+  theme_few()+
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
+@
+
+<<>>=
+library(gridExtra)
+grid.arrange(a2,b2,d2,c2, 
+            top=textGrob("Target Retrieval Accuracy as a function of\nPrime-Target Association Ratings", 
+                                      gp=gpar(fontsize=20)),
+             left = textGrob("Predicted Probabilities for Target Retrieval Accuracy", rot = 90, vjust = 1, gp = gpar(fontsize = 15)))
+@
+
+\section {Demographics T-Tests}
+
+<<>>=
+e2_desc = read.csv("exp2_descriptives.csv", heade = TRUE, sep = ",") 
+
+t.test(e2_desc$ShipleyOld, e2_desc$ShipleyYoung)
+t.test(e2_desc$OldEducation, e2_desc$YoungEducation)
+@
 
 
 \end{document}
