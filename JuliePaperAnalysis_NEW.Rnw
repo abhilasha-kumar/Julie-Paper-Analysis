@@ -142,10 +142,6 @@ final_statedata$StudyNo <- as.factor(final_statedata$StudyNo)
 final_statedata$PrimeInstruction <- as.factor(final_statedata$PrimeInstruction)
 final_statedata$State <- as.factor(final_statedata$State)
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 4b773da20fa02798d6bb13a1ff7d6c2fb2558311
 ### STATE DATA SPLIT BY TARGET ACCURACY
 
 data = read.csv("Julie_Main5studies.csv", header = TRUE, sep = ",")
@@ -158,10 +154,6 @@ exp_1_state_acc = data_state_acc %>% filter(StudyNo == "2" | StudyNo == "4")
 exp_2_state_acc = data_state_acc %>% filter(StudyNo == "5" | StudyNo == "6")
 exp_3_state_acc = data_state_acc %>% filter(StudyNo == "1")
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 4b773da20fa02798d6bb13a1ff7d6c2fb2558311
 @
 
 \subsection {State Accuracy Figures}
@@ -2092,11 +2084,8 @@ Both_Sem = main_item %>% filter(PrimeCondition == "B" &
                                   PrimeType == "Both")
 @
 
-<<<<<<< HEAD
 \subsubsection *{Models}
-=======
 \subsubsection *{Models with Only Rating}
->>>>>>> 4b773da20fa02798d6bb13a1ff7d6c2fb2558311
 
 <<>>=
 library(lme4)
@@ -2105,7 +2094,6 @@ phon_model = glmer(data = Phon, Accuracy ~ SoundRating*StudyNo +
                      (1|Subject), family = "binomial")
 summary(phon_model)
 
-<<<<<<< HEAD
 phon_model_2 = glmer(data = Phon, Accuracy ~ Rating + 
                      (1|Subject), family = "binomial")
 summary(phon_model_2)
@@ -2273,6 +2261,308 @@ both_sem_plot = fixed.frame %>%
 library(gridExtra)
 library(grid)
 grid.arrange(phon_plot,sem_plot,both_phon_plot,both_sem_plot, 
+            top=textGrob("Target Retrieval Accuracy as a function of\nPrime-Target Association Ratings", 
+                                      gp=gpar(fontsize=20)),
+             left = textGrob("Predicted Probabilities for Target Retrieval Accuracy", rot = 90, vjust = 1, gp = gpar(fontsize = 15)))
+@
+
+\subsubsection *{Models with Rating and Average Performance}
+
+<<>>=
+library(lme4)
+
+phon_model_2 = glmer(data = Phon, Accuracy ~ SoundRating*ItemAcc + 
+                     (1|Subject), family = "binomial")
+summary(phon_model_2)
+
+sem_model_2 = glmer(data = Sem, Accuracy ~ MeaningRating*ItemAcc  + 
+                     (1|Subject), family = "binomial")
+summary(sem_model_2)
+
+both_phon_model_2 = glmer(data = Both_Phon, Accuracy ~ SoundRating*ItemAcc  + 
+                     (1|Subject), family = "binomial")
+summary(both_phon_model_2)
+
+
+both_sem_model_2 = glmer(data = Both_Sem, Accuracy ~ MeaningRating*ItemAcc  + 
+                     (1|Subject), family = "binomial")
+summary(both_sem_model_2)
+
+## seems that ratings have an overall effect on accuracy, but not above and beyond the mean level accuracy of the item itself. 
+
+@
+
+
+\subsection* {Plotting Model Fits: Rating Only}
+
+\subsubsection*{Phonological}
+
+<<>>=
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      SoundRating = seq(1,7,1))) 
+fixed.frame$pred = predict(phon_model, newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+a = fixed.frame %>%
+  ggplot(aes(x = SoundRating, y = prob)) +
+    geom_line(size = 1, color = "forestgreen") +
+        labs(x = "Sound Rating for Phon Prime:Target", 
+             y = "Predicted Probabilities for Accuracy",
+         title = "Effect of Prime Rating on Accuracy in 
+         Phonological Condition") +
+  theme_few()+
+  ylim(0,0.40)+
+    scale_color_colorblind() +
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+
+\subsubsection*{Semantic}
+
+<<>>=
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      MeaningRating = seq(1,7,1))) 
+fixed.frame$pred = predict(sem_model, newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+b = fixed.frame %>%
+  ggplot(aes(x = MeaningRating, y = prob)) +
+    geom_line(size = 1, color = "red") +
+        labs(x = "Meaning Rating for Sem Prime:Target", 
+             y = "Predicted Probabilities for Accuracy",
+         title = "Effect of Prime Rating on Accuracy in 
+         Semantic Condition") +
+  ylim(0,0.40)+
+  theme_few()+
+    scale_color_colorblind() +
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+\subsubsection*{Both_Sem}
+
+<<>>=
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      MeaningRating = seq(1,7,1))) 
+fixed.frame$pred = predict(both_sem_model, 
+                           newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+c = fixed.frame %>%
+  ggplot(aes(x = MeaningRating, y = prob)) +
+    geom_line(size = 1, color = "red") +
+        labs(x = "Meaning Rating for Both Prime:Target", 
+             y = "Predicted Probabilities for Accuracy",
+         title = "Effect of Prime Rating on Accuracy in 
+         Both Condition") +
+  ylim(0,0.40)+
+  theme_few()+
+    scale_color_colorblind() +
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+\subsubsection*{Both_Phon}
+
+<<>>=
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      SoundRating = seq(1,7,1))) 
+fixed.frame$pred = predict(both_phon_model, 
+                           newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+d = fixed.frame %>%
+  ggplot(aes(x = SoundRating, y = prob)) +
+    geom_line(size = 1, color = "forestgreen") +
+        labs(x = "Sound Rating for Both Prime:Target", 
+             y = "Predicted Probabilities for Accuracy",
+         title = "Effect of Prime Rating on Accuracy in 
+         Both Condition") +
+  theme_few()+
+  ylim(0,0.40)+
+    scale_color_colorblind() +
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+<<>>=
+library(gridExtra)
+grid.arrange(a,b,c,d)
+@
+
+\subsection* {Plotting Model Fits: Rating and Mean Accuracy}
+
+\subsubsection*{Phonological}
+
+<<>>=
+fixed.frame <- Phon %>% 
+  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
+            sd = sd(ItemAcc, na.rm = T))
+
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      SoundRating = seq(1,7,1),
+       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
+                     fixed.frame$mean,
+                     fixed.frame$mean+fixed.frame$sd))) 
+
+fixed.frame$pred = predict(phon_model_2, newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+a2 = fixed.frame %>%
+mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
+                                 labels = c("-1SD", "0SD", "1SD"))) %>%
+  ggplot(aes(x = SoundRating, y = prob, color = ItemAccuracy)) +
+  geom_line(size = 1) +
+        labs(x = "Sound Rating", 
+             y = "",
+         title = "Phonological Condition (Sound Rating)") +
+  theme_few()+
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
+@
+
+
+\subsubsection*{Semantic}
+
+<<>>=
+fixed.frame <- Phon %>% 
+  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
+            sd = sd(ItemAcc, na.rm = T))
+
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      MeaningRating = seq(1,7,1),
+       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
+                     fixed.frame$mean,
+                     fixed.frame$mean+fixed.frame$sd))) 
+
+fixed.frame$pred = predict(sem_model_2, newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+b2 = fixed.frame %>%
+mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
+                                 labels = c("-1SD", "0SD", "1SD"))) %>%
+  ggplot(aes(x = MeaningRating, y = prob, color = ItemAccuracy)) +
+  geom_line(size = 1) +
+          labs(x = "Meaning Rating", 
+             y = "",
+         title = "Semantic Condition (Meaning Rating)") +
+  theme_few()+
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
+@
+
+\subsubsection*{Both_Sem}
+
+<<>>=
+fixed.frame <- Phon %>% 
+  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
+            sd = sd(ItemAcc, na.rm = T))
+
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      MeaningRating = seq(1,7,1),
+       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
+                     fixed.frame$mean,
+                     fixed.frame$mean+fixed.frame$sd))) 
+
+fixed.frame$pred = predict(both_sem_model_2, 
+                           newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+c2 = fixed.frame %>%
+mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
+                                 labels = c("-1SD", "0SD", "1SD"))) %>%
+  ggplot(aes(x = MeaningRating, y = prob, color = ItemAccuracy)) +
+  geom_line(size = 1) +
+           labs(x = "Meaning Rating", 
+             y = "",
+         title = "Both Condition (Meaning Rating)") +
+  theme_few()+
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
+@
+
+\subsubsection*{Both_Phon}
+
+<<>>=
+fixed.frame <- Phon %>% 
+  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
+            sd = sd(ItemAcc, na.rm = T))
+
+fixed.frame <-
+  data.frame(
+    expand.grid(
+      # here, you add values for your time variable and predictors
+      SoundRating = seq(1,7,1),
+       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
+                     fixed.frame$mean,
+                     fixed.frame$mean+fixed.frame$sd))) 
+
+fixed.frame$pred = predict(both_phon_model_2, 
+                           newdata = fixed.frame, re.form = NA)
+fixed.frame$odds = exp(fixed.frame$pred)
+fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
+
+d2 = fixed.frame %>%
+mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
+                                 labels = c("-1SD", "0SD", "1SD"))) %>%
+  ggplot(aes(x = SoundRating, y = prob, color = ItemAccuracy)) +
+  geom_line(size = 1) +
+         labs(x = "Sound Rating", 
+             y = "",
+         title = "Both Condition (Sound Rating)") +
+  theme_few()+
+    theme(axis.text = element_text(face = "bold", size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
+@
+
+<<>>=
+library(gridExtra)
+grid.arrange(a2,b2,d2,c2, 
             top=textGrob("Target Retrieval Accuracy as a function of\nPrime-Target Association Ratings", 
                                       gp=gpar(fontsize=20)),
              left = textGrob("Predicted Probabilities for Target Retrieval Accuracy", rot = 90, vjust = 1, gp = gpar(fontsize = 15)))
@@ -2770,9 +3060,16 @@ library(dplyr)
 word_type_prime = group_by(main_word, 
                          ExperimentName, AgeGroup,Subject, PrimeCondition, Proper) %>%
   summarise_at(vars(Accuracy), mean)
+word_type_prime$Subject = as.factor(word_type_prime$Subject)
 
 word_type_prime_E1 = word_type_prime %>% 
   filter(ExperimentName == "tot extended prime")
+
+word_type_prime_E2 = word_type_prime %>% 
+  filter(ExperimentName == "tot not the prime")
+
+word_type_prime_E3 = word_type_prime %>% 
+  filter(ExperimentName == "tot 48 ms")
 
 word_type_age = group_by(main_word, ExperimentName,
                          AgeGroup, Proper) %>%
@@ -2791,6 +3088,22 @@ word_type_state_sub_age = group_by(main_word, Subject, AgeGroup,
                            Proper, Question.RESP) %>%
   summarise(Trials = n())
 
+@
+
+\subsection{E1 E2 E3: proper name ANOVA}
+
+<<>>=
+e1_proper_aov = aov(data = word_type_prime_E1, Accuracy ~ AgeGroup*PrimeCondition*Proper +
+                                      Error(Subject/(PrimeCondition*Proper)))
+summary(e1_proper_aov)
+
+e2_proper_aov = aov(data = word_type_prime_E2, Accuracy ~ AgeGroup*PrimeCondition*Proper +
+                                      Error(Subject/(PrimeCondition*Proper)))
+summary(e2_proper_aov)
+
+e3_proper_aov = aov(data = word_type_prime_E3, Accuracy ~ PrimeCondition*Proper +
+                                      Error(Subject/(PrimeCondition*Proper)))
+summary(e3_proper_aov)
 @
 
 \subsection * {Word Type, Experiment and Prime Type}
@@ -2880,333 +3193,9 @@ ggplot(aes(x = RetrievalState, y = Trials,
           legend.title = element_text(face = "bold", size = rel(1)),
      plot.title = element_text(face = "bold", size = rel(1.5), hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
-=======
-sem_model = glmer(data = Sem, Accuracy ~ MeaningRating*StudyNo  + 
-                     (1|Subject) , family = "binomial")
-summary(sem_model)
-
-both_phon_model = glmer(data = Both_Phon, Accuracy ~ SoundRating*StudyNo  + 
-                     (1|Subject), family = "binomial")
-summary(both_phon_model)
-
-
-both_sem_model = glmer(data = Both_Sem, Accuracy ~ MeaningRating*StudyNo  + 
-                     (1|Subject), family = "binomial")
-summary(both_sem_model)
-
-## seems that ratings have an overall effect on accuracy, but not above and beyond the mean level accuracy of the item itself. 
-@
-
-\subsubsection *{Models with  Rating and Average Performance}
-
-<<>>=
-library(lme4)
-
-phon_model_2 = glmer(data = Phon, Accuracy ~ SoundRating*ItemAcc + 
-                     (1|Subject), family = "binomial")
-summary(phon_model_2)
-
-sem_model_2 = glmer(data = Sem, Accuracy ~ MeaningRating*ItemAcc  + 
-                     (1|Subject), family = "binomial")
-summary(sem_model_2)
-
-both_phon_model_2 = glmer(data = Both_Phon, Accuracy ~ SoundRating*ItemAcc  + 
-                     (1|Subject), family = "binomial")
-summary(both_phon_model_2)
-
-
-both_sem_model_2 = glmer(data = Both_Sem, Accuracy ~ MeaningRating*ItemAcc  + 
-                     (1|Subject), family = "binomial")
-summary(both_sem_model_2)
-
-## seems that ratings have an overall effect on accuracy, but not above and beyond the mean level accuracy of the item itself. 
 @
 
 
-\subsection* {Plotting Model Fits: Rating Only}
-
-\subsubsection*{Phonological}
-
-<<>>=
-fixed.frame <-
-  data.frame(
-    expand.grid(
-      # here, you add values for your time variable and predictors
-      SoundRating = seq(1,7,1))) 
-fixed.frame$pred = predict(phon_model, newdata = fixed.frame, re.form = NA)
-fixed.frame$odds = exp(fixed.frame$pred)
-fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
-
-a = fixed.frame %>%
-  ggplot(aes(x = SoundRating, y = prob)) +
-    geom_line(size = 1, color = "forestgreen") +
-        labs(x = "Sound Rating for Phon Prime:Target", 
-             y = "Predicted Probabilities for Accuracy",
-         title = "Effect of Prime Rating on Accuracy in 
-         Phonological Condition") +
-  theme_few()+
-  ylim(0,0.40)+
-    scale_color_colorblind() +
-    theme(axis.text = element_text(face = "bold", size = rel(1)),
-          axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
-@
-
-
-\subsubsection*{Semantic}
-
-<<>>=
-fixed.frame <-
-  data.frame(
-    expand.grid(
-      # here, you add values for your time variable and predictors
-      MeaningRating = seq(1,7,1))) 
-fixed.frame$pred = predict(sem_model, newdata = fixed.frame, re.form = NA)
-fixed.frame$odds = exp(fixed.frame$pred)
-fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
-
-b = fixed.frame %>%
-  ggplot(aes(x = MeaningRating, y = prob)) +
-    geom_line(size = 1, color = "red") +
-        labs(x = "Meaning Rating for Sem Prime:Target", 
-             y = "Predicted Probabilities for Accuracy",
-         title = "Effect of Prime Rating on Accuracy in 
-         Semantic Condition") +
-  ylim(0,0.40)+
-  theme_few()+
-    scale_color_colorblind() +
-    theme(axis.text = element_text(face = "bold", size = rel(1)),
-          axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
-@
-
-\subsubsection*{Both_Sem}
-
-<<>>=
-fixed.frame <-
-  data.frame(
-    expand.grid(
-      # here, you add values for your time variable and predictors
-      MeaningRating = seq(1,7,1))) 
-fixed.frame$pred = predict(both_sem_model, 
-                           newdata = fixed.frame, re.form = NA)
-fixed.frame$odds = exp(fixed.frame$pred)
-fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
-
-c = fixed.frame %>%
-  ggplot(aes(x = MeaningRating, y = prob)) +
-    geom_line(size = 1, color = "red") +
-        labs(x = "Meaning Rating for Both Prime:Target", 
-             y = "Predicted Probabilities for Accuracy",
-         title = "Effect of Prime Rating on Accuracy in 
-         Both Condition") +
-  ylim(0,0.40)+
-  theme_few()+
-    scale_color_colorblind() +
-    theme(axis.text = element_text(face = "bold", size = rel(1)),
-          axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
-@
-
-\subsubsection*{Both_Phon}
-
-<<>>=
-fixed.frame <-
-  data.frame(
-    expand.grid(
-      # here, you add values for your time variable and predictors
-      SoundRating = seq(1,7,1))) 
-fixed.frame$pred = predict(both_phon_model, 
-                           newdata = fixed.frame, re.form = NA)
-fixed.frame$odds = exp(fixed.frame$pred)
-fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
-
-d = fixed.frame %>%
-  ggplot(aes(x = SoundRating, y = prob)) +
-    geom_line(size = 1, color = "forestgreen") +
-        labs(x = "Sound Rating for Both Prime:Target", 
-             y = "Predicted Probabilities for Accuracy",
-         title = "Effect of Prime Rating on Accuracy in 
-         Both Condition") +
-  theme_few()+
-  ylim(0,0.40)+
-    scale_color_colorblind() +
-    theme(axis.text = element_text(face = "bold", size = rel(1)),
-          axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
-@
-
-<<>>=
-library(gridExtra)
-grid.arrange(a,b,c,d)
-@
-
-\subsection* {Plotting Model Fits: Rating and Mean Accuracy}
-
-\subsubsection*{Phonological}
-
-<<>>=
-fixed.frame <- Phon %>% 
-  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
-            sd = sd(ItemAcc, na.rm = T))
-
-fixed.frame <-
-  data.frame(
-    expand.grid(
-      # here, you add values for your time variable and predictors
-      SoundRating = seq(1,7,1),
-       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
-                     fixed.frame$mean,
-                     fixed.frame$mean+fixed.frame$sd))) 
-
-fixed.frame$pred = predict(phon_model_2, newdata = fixed.frame, re.form = NA)
-fixed.frame$odds = exp(fixed.frame$pred)
-fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
-
-a2 = fixed.frame %>%
-mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
-                                 labels = c("-1SD", "0SD", "1SD"))) %>%
-  ggplot(aes(x = SoundRating, y = prob, color = ItemAccuracy)) +
-  geom_line(size = 1) +
-        labs(x = "Sound Rating", 
-             y = "",
-         title = "Phonological Condition (Sound Rating)") +
-  theme_few()+
-    theme(axis.text = element_text(face = "bold", size = rel(1)),
-          axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
-@
-
-
-\subsubsection*{Semantic}
-
-<<>>=
-fixed.frame <- Phon %>% 
-  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
-            sd = sd(ItemAcc, na.rm = T))
-
-fixed.frame <-
-  data.frame(
-    expand.grid(
-      # here, you add values for your time variable and predictors
-      MeaningRating = seq(1,7,1),
-       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
-                     fixed.frame$mean,
-                     fixed.frame$mean+fixed.frame$sd))) 
-
-fixed.frame$pred = predict(sem_model_2, newdata = fixed.frame, re.form = NA)
-fixed.frame$odds = exp(fixed.frame$pred)
-fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
-
-b2 = fixed.frame %>%
-mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
-                                 labels = c("-1SD", "0SD", "1SD"))) %>%
-  ggplot(aes(x = MeaningRating, y = prob, color = ItemAccuracy)) +
-  geom_line(size = 1) +
-          labs(x = "Meaning Rating", 
-             y = "",
-         title = "Semantic Condition (Meaning Rating)") +
-  theme_few()+
-    theme(axis.text = element_text(face = "bold", size = rel(1)),
-          axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
-@
-
-\subsubsection*{Both_Sem}
-
-<<>>=
-fixed.frame <- Phon %>% 
-  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
-            sd = sd(ItemAcc, na.rm = T))
-
-fixed.frame <-
-  data.frame(
-    expand.grid(
-      # here, you add values for your time variable and predictors
-      MeaningRating = seq(1,7,1),
-       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
-                     fixed.frame$mean,
-                     fixed.frame$mean+fixed.frame$sd))) 
-
-fixed.frame$pred = predict(both_sem_model_2, 
-                           newdata = fixed.frame, re.form = NA)
-fixed.frame$odds = exp(fixed.frame$pred)
-fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
-
-c2 = fixed.frame %>%
-mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
-                                 labels = c("-1SD", "0SD", "1SD"))) %>%
-  ggplot(aes(x = MeaningRating, y = prob, color = ItemAccuracy)) +
-  geom_line(size = 1) +
-           labs(x = "Meaning Rating", 
-             y = "",
-         title = "Both Condition (Meaning Rating)") +
-  theme_few()+
-    theme(axis.text = element_text(face = "bold", size = rel(1)),
-          axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
-@
-
-\subsubsection*{Both_Phon}
-
-<<>>=
-fixed.frame <- Phon %>% 
-  dplyr::summarise(mean = mean(ItemAcc, na.rm = T), 
-            sd = sd(ItemAcc, na.rm = T))
-
-fixed.frame <-
-  data.frame(
-    expand.grid(
-      # here, you add values for your time variable and predictors
-      SoundRating = seq(1,7,1),
-       ItemAcc = c(fixed.frame$mean-fixed.frame$sd,
-                     fixed.frame$mean,
-                     fixed.frame$mean+fixed.frame$sd))) 
-
-fixed.frame$pred = predict(both_phon_model_2, 
-                           newdata = fixed.frame, re.form = NA)
-fixed.frame$odds = exp(fixed.frame$pred)
-fixed.frame$prob = fixed.frame$odds/(1+fixed.frame$odds)
-
-d2 = fixed.frame %>%
-mutate(ItemAccuracy = factor(ItemAcc, levels = unique(ItemAcc),
-                                 labels = c("-1SD", "0SD", "1SD"))) %>%
-  ggplot(aes(x = SoundRating, y = prob, color = ItemAccuracy)) +
-  geom_line(size = 1) +
-         labs(x = "Sound Rating", 
-             y = "",
-         title = "Both Condition (Sound Rating)") +
-  theme_few()+
-    theme(axis.text = element_text(face = "bold", size = rel(1)),
-          axis.title = element_text(face = "bold", size = rel(1)),
-          legend.title = element_text(face = "bold", size = rel(1)),
-          plot.title = element_text(face = "bold", size = rel(1), hjust = .5))
-@
-
-<<>>=
-library(gridExtra)
-grid.arrange(a2,b2,d2,c2, 
-            top=textGrob("Target Retrieval Accuracy as a function of\nPrime-Target Association Ratings", 
-                                      gp=gpar(fontsize=20)),
-             left = textGrob("Predicted Probabilities for Target Retrieval Accuracy", rot = 90, vjust = 1, gp = gpar(fontsize = 15)))
-@
-
-\section {Demographics T-Tests}
-
-<<>>=
-e2_desc = read.csv("exp2_descriptives.csv", heade = TRUE, sep = ",") 
-
-t.test(e2_desc$ShipleyOld, e2_desc$ShipleyYoung)
-t.test(e2_desc$OldEducation, e2_desc$YoungEducation)
->>>>>>> 4b773da20fa02798d6bb13a1ff7d6c2fb2558311
-@
 
 \subsection * {Word Type, Age and State}
 <<>>=
@@ -3727,7 +3716,7 @@ exp1_stateprime_aov = aov(data = exp1_state_prime,
                           Trials ~ AgeGroup*PrimeCondition*State + 
                           Error(Target/(AgeGroup*PrimeCondition*State)))
 summary(exp1_stateprime_aov)
-
+sjstats::eta_sq(car::Anova(exp1_stateprime_aov), partial = TRUE)
 library(ez)
 ezANOVA(data = exp1_state_prime, wid = .(Subject),
         dv = .(Trials), within =.(PrimeCondition, State),
@@ -3862,7 +3851,7 @@ library(multcomp)
 exp1_target_lsm = lsmeans::lsmeans(exp2_item_acc, 
                                    c("AgeGroup", "PrimeCondition"))
 prime_effect = cld(exp1_target_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE, by = c("AgeGroup"))
+                adjust = "tukey", details = TRUE, by = c("PrimeCondition"))
 library(knitr)
 kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
 
@@ -3883,6 +3872,15 @@ t.test(target_p$Accuracy, target_u$Accuracy, paired = TRUE)
 t.test(target_b$Accuracy, target_r$Accuracy, paired = TRUE)
 t.test(target_b$Accuracy, target_u$Accuracy, paired = TRUE)
 t.test(target_r$Accuracy, target_u$Accuracy, paired = TRUE)
+
+### age effect
+e2_item_age_collapsed = group_by(e2_hlm, Target, AgeGroup) %>%
+  summarise_at(vars(Accuracy), mean)
+target_young = e2_item_age_collapsed %>% filter(AgeGroup == "Young")
+target_old = e2_item_age_collapsed %>% filter(AgeGroup == "Old")
+
+t.test(target_young$Accuracy, target_old$Accuracy, paired = TRUE)
+
 @
 
 \subsubsection {State Data}
@@ -4217,6 +4215,35 @@ prime_effect = cld(exp3_errors_lsm, alpha = 0.05,
 
 kable(subset(prime_effect$comparisons, prime_effect$comparisons$p.value < 0.8))
 @
+
+\section {Comparing YA 48 ms with OA NotthePrime}
+
+<<>>=
+
+for (i in 1: nrow(final_mcq)){
+   if(is.na(final_mcq[i,9])){
+     final_mcq[i,9] = 0
+   }
+}
+
+exp3_compare_1 = subset(final_mcq, final_mcq$StudyNo == '6' | 
+                        final_mcq$StudyNo == '1')
+
+compare_aov_1 = aov(data = exp3_compare_1, Proportion ~ StudyNo*PrimeType*ChosenPrime + 
+                      Error(Target/(StudyNo*PrimeType*ChosenPrime)))
+summary(compare_aov_1)
+
+exp3_compare_1 = subset(final_mcq, final_mcq$StudyNo == '6' | 
+                        final_mcq$StudyNo == '1')
+
+exp3_compare_2 = subset(final_mcq, final_mcq$StudyNo == '1' | 
+                        final_mcq$StudyNo == '5')
+compare_aov_2 = aov(data = exp3_compare_2, Proportion ~ StudyNo*PrimeType*ChosenPrime + 
+                      Error(Target/(StudyNo*PrimeType*ChosenPrime)))
+summary(compare_aov_2)
+@
+
+
 
 \section {Demographics}
 
